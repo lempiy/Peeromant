@@ -1,0 +1,19 @@
+<section *ngIf="false" class="form-block nickname-set">
+  <input type="text" placeholder="Your nickname...">
+  <div>
+    <button class="btn btn-block btn-main">Apply</button>
+  </div>
+</section>
+<section *ngIf="true" class="form-block nickname-set">
+    <table>
+      <tr>
+        <td><b>Your are: </b></td>
+        <td><span>{{'lempiy'}}</span></td>
+      </tr>
+      <tr>
+        <td><b>Status: </b></td>
+        <td><span class="text-success">
+          <clr-icon shape="connect"></clr-icon>{{'Online'}}</span></td>
+      </tr>
+    </table>
+</section>

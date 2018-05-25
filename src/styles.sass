@@ -1,1 +1,19 @@
 /* You can add global styles to this file, and also import other style files */
+@import 'styles/_variables'
+
+html
+    font-size: $basic-font-size
+    min-height: 100%
+    @media (max-width: 767px)
+        font-size: $basic-font-size * 0.9
+
+    .btn-main
+        background-color: $main-color
+        border-color: $main-color
+        color: #fff
+        &:hover
+            background-color: $main-color
+            color: #fff
+            opacity: 0.8
+        &:focus
+            outline: none
