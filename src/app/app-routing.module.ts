@@ -7,6 +7,10 @@ const routes: Routes = [
     loadChildren: './pages/enter/enter.module#EnterModule'
   },
   {
+    path: 'camp/:id',
+    loadChildren: './pages/camp/camp.module#CampModule'
+  },
+  {
     path: '',
     redirectTo: 'enter',
     pathMatch: 'full'

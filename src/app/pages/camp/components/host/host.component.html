@@ -1,0 +1,31 @@
+<div class="card">
+    <div class="card-header">
+        File desk
+    </div>
+    <div class="card-block">
+        <div class="card-title">
+            lempiy
+        </div>
+        <div class="card-text">
+            <clr-datagrid>
+                <clr-dg-column>File Name</clr-dg-column>
+                <clr-dg-column>Size</clr-dg-column>
+                <clr-dg-column>Remove</clr-dg-column>
+            
+                <clr-dg-row *ngFor="let file of files">
+                    <clr-dg-cell>{{file.name}}</clr-dg-cell>
+                    <clr-dg-cell>{{file.size}}</clr-dg-cell>
+                    <clr-dg-cell>
+                        <clr-icon shape="trash"></clr-icon>
+                    </clr-dg-cell>
+                </clr-dg-row>
+            
+                <clr-dg-footer>{{files.length}} files</clr-dg-footer>
+            </clr-datagrid>
+        </div>
+    </div>
+    <div class="card-footer">
+        <button class="btn btn-sm btn-out"><clr-icon shape="plus"></clr-icon>Add file</button>
+        <button class="btn btn-sm btn-out"><clr-icon shape="home"></clr-icon>Leave camp</button>
+    </div>
+</div>
