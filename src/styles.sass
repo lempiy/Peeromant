@@ -6,7 +6,8 @@ html
     min-height: 100%
     @media (max-width: 767px)
         font-size: $basic-font-size * 0.9
-
+    .hidden
+        display: none
     .btn-main
         background-color: $main-color
         border-color: $main-color
@@ -35,4 +36,8 @@ html
             outline: none
         clr-icon
             margin-right: 0.2rem
+    .datagrid-placeholder.datagrid-empty
+        .datagrid-placeholder-image
+            background-image: url('assets/import-line.svg')
+            opacity: 0.3
 

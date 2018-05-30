@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { FilesService } from './services/files.service'
+import { HubService } from './services/hub.service'
 
 @Component({
   selector: 'peer-camp',
@@ -7,9 +9,10 @@ import { Component, OnInit } from '@angular/core';
 })
 export class CampComponent implements OnInit {
 
-  constructor() { }
+  constructor(public fs: FilesService, public hs: HubService) { }
 
   ngOnInit() {
+    this.fs.setPeers(this.hs.clients.map(c => c.name))
   }
 
 }

@@ -5,6 +5,7 @@ import { CampRoutingModule } from './camp-routing.module';
 import { CampComponent } from './camp.component';
 import { UsercardComponent } from './components/usercard/usercard.component';
 import { HostComponent } from './components/host/host.component';
+import { PairPipe } from './pipes/pair.pipe';
 
 @NgModule({
   imports: [
@@ -12,6 +13,6 @@ import { HostComponent } from './components/host/host.component';
     CampRoutingModule,
     ClarityModule
   ],
-  declarations: [CampComponent, UsercardComponent, HostComponent]
+  declarations: [CampComponent, UsercardComponent, HostComponent, PairPipe]
 })
 export class CampModule { }

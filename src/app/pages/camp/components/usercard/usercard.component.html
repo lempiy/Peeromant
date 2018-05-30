@@ -7,21 +7,24 @@
             <clr-icon shape="devices" size="72"></clr-icon>
             <div class="card-media-description">
                 <span class="card-media-title">
-                    John Doe
+                    {{client.name}}
                 </span>
                 <span class="card-media-text">
-                    Status: Online
+                    Status: {{client.status}}
                 </span>
             </div>
         </div>
         <div class="card-text text-center">
-            <clr-datagrid [(clrDgSelected)]="selected" [clDgRowSelection]="true">
+            <clr-datagrid [(clrDgSelected)]="fs.selected[client.name]" [clDgRowSelection]="true">
                 <clr-dg-column>File Name</clr-dg-column>
                 <clr-dg-column>Size</clr-dg-column>
-                <clr-dg-row *clrDgItems="let file of files" [clrDgItem]="file">
+                <clr-dg-row *clrDgItems="let file of fs.files" [clrDgItem]="file">
                     <clr-dg-cell>{{file.name}}</clr-dg-cell>
                     <clr-dg-cell>{{file.size}}</clr-dg-cell>
                 </clr-dg-row>
+                <clr-dg-placeholder>
+                  File desk is empty...
+                </clr-dg-placeholder>
             </clr-datagrid>
         </div>
     </div>

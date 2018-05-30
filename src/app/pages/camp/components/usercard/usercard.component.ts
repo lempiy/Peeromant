@@ -1,4 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { FilesService } from '../../services/files.service'
+import { Input } from '@angular/core'
+import { IPeer } from '../../defs/peer'
 
 @Component({
   selector: 'peer-usercard',
@@ -6,24 +9,14 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./usercard.component.sass']
 })
 export class UsercardComponent implements OnInit {
-  files:any[] = [
-    {
-      "name": "game.zip",
-      "size": "25.4MB"
-    },
-    {
-      "name": "row.txt",
-      "size": "0.1MB"
-    },
-    {
-      "name": "image.iso",
-      "size": "7024MB"
-    }
-  ];
+  @Input()
+  readonly client: IPeer
+
   selected:any[] = []
-  constructor() {}
+  constructor(public fs: FilesService) {}
 
   ngOnInit() {
+
   }
 
 }

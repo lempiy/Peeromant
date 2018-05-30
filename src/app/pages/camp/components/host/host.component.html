@@ -4,7 +4,16 @@
     </div>
     <div class="card-block">
         <div class="card-title">
-            lempiy
+            <table>
+              <tr>
+                <th>Your Name:</th>
+                <td class="pl-05">lempiy</td>
+              </tr>
+              <tr class="text-right">
+                <th>Firecamp:</th>
+                <td class="pl-05">Documents</td>
+              </tr>
+            </table>
         </div>
         <div class="card-text">
             <clr-datagrid>
@@ -12,20 +21,29 @@
                 <clr-dg-column>Size</clr-dg-column>
                 <clr-dg-column>Remove</clr-dg-column>
             
-                <clr-dg-row *ngFor="let file of files">
+                <clr-dg-row *ngFor="let file of fs.files">
                     <clr-dg-cell>{{file.name}}</clr-dg-cell>
                     <clr-dg-cell>{{file.size}}</clr-dg-cell>
                     <clr-dg-cell>
-                        <clr-icon shape="trash"></clr-icon>
+                        <clr-icon
+                          (click)="onRemoveFile(file)"
+                          shape="trash" 
+                          title="Remove">
+                        </clr-icon>
                     </clr-dg-cell>
                 </clr-dg-row>
-            
-                <clr-dg-footer>{{files.length}} files</clr-dg-footer>
+                <clr-dg-placeholder>
+                  Add files to transfer...
+                </clr-dg-placeholder>
+                <clr-dg-footer>{{fs.files.length}} files</clr-dg-footer>
             </clr-datagrid>
         </div>
     </div>
     <div class="card-footer">
-        <button class="btn btn-sm btn-out"><clr-icon shape="plus"></clr-icon>Add file</button>
+        <label class="btn btn-sm btn-out">
+          <input (change)='onNewFile($event)' type="file" name="files" multiple class="hidden">
+          <clr-icon shape="plus"></clr-icon>Add file
+        </label>
         <button class="btn btn-sm btn-out"><clr-icon shape="home"></clr-icon>Leave camp</button>
     </div>
 </div>
