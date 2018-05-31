@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
-import { Peer } from '../defs/peer'
+import { IPeer } from '../defs/peer'
 import { Status } from '../../../defs/status.enum'
 
 @Injectable({
   providedIn: 'root'
 })
 export class HubService {
-  readonly clients: Peer[] = [
+  readonly clients: IPeer[] = [
     {
       name: 'Eric Cartman',
       status: Status.Online
