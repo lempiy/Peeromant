@@ -7,15 +7,14 @@ export class ThreadSubject<T> extends Subject<T> {
     private _refCounts: {[key: string]: number}
     constructor() {
         super()
-
     }
 
-    emit () {
-
+    emit (thread: string, event) {
+        if (this._threads[thread]) this._threads[thread].next(event)
     }
     
     threadSubscribe(thread: string, a?: PartialObserver<T> | Function, onError?: (exception: any) => void, onCompleted?: () => void) {
-        let t: Subject<T>|null = null
+        let t: Subject<any>|null = null
         let unsub: Subscription|null = null
         if (this._threads[thread]) {
             t = this._threads[thread]
@@ -37,14 +36,6 @@ export class ThreadSubject<T> extends Subject<T> {
                 delete this._threads[thread]
                 delete this._refCounts[thread]
             }
-        })
-    }
-
-    subscribe(a?: PartialObserver<T> | Function, onError?: (exception: any) => void, onCompleted?: () => void) {
-        const unsub = super.subscribe.apply(this, arguments)
-        return new Subscription(() => {
-
-            unsub()
         })
     }
 }
