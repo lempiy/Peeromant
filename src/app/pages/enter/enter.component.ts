@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { SignallerService } from '../../services/signaller.service'
+import { switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'peer-enter',
@@ -7,9 +9,14 @@ import { Component, OnInit } from '@angular/core';
 })
 export class EnterComponent implements OnInit {
 
-  constructor() { }
+  constructor(private sgn: SignallerService) { }
 
   ngOnInit() {
+    this.sgn
+    .ensureConnected()
+    .pipe(switchMap(() => this.sgn.getAvailableHubs()))
+    .subscribe(e => {
+      console.log(e.payload.hubs)
+    }, e => console.log("error: ", e))
   }
-
 }

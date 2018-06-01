@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
   providedIn: 'root'
 })
 export class AuthService {
-  private _name: string = localStorage.getItem('name')
+  private _name: string = localStorage.getItem('name') || ''
   constructor() {}
 
   get name ():string {
