@@ -5,7 +5,6 @@ import { EnterRoutingModule } from './enter-routing.module';
 import { NicknameComponent } from './components/nickname/nickname.component'
 import { ClarityModule } from "@clr/angular";
 import { FirelistComponent } from './components/firelist/firelist.component';
-import { CreateCampComponent } from './components/create-camp/create-camp.component';
 
 @NgModule({
   imports: [
@@ -13,7 +12,7 @@ import { CreateCampComponent } from './components/create-camp/create-camp.compon
     EnterRoutingModule,
     ClarityModule
   ],
-  declarations: [EnterComponent, NicknameComponent, FirelistComponent, CreateCampComponent]
+  declarations: [EnterComponent, NicknameComponent, FirelistComponent]
 })
 export class EnterModule {
   static forRoot():ModuleWithProviders {

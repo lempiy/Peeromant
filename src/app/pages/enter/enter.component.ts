@@ -18,4 +18,12 @@ export class EnterComponent implements OnInit {
         console.log(e.payload.hubs)
       }, e => console.log("error: ", e))
   }
+
+  onAddHub(event: string) {
+    console.log(event)
+  }
+
+  onConnectHub(event: string) {
+    console.log(event)
+  }
 }

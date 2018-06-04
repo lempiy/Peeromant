@@ -6,6 +6,8 @@ import { Component, OnInit, Output, EventEmitter } from '@angular/core';
   styleUrls: ['./firelist.component.sass']
 })
 export class FirelistComponent implements OnInit {
+  @Output() add: EventEmitter<string> = new EventEmitter()
+  @Output() connect: EventEmitter<string> = new EventEmitter()
   show:boolean = false
   name:string = ''
   constructor() { }
@@ -23,7 +25,7 @@ export class FirelistComponent implements OnInit {
   }
 
   applyNewHub() {
-    console.log(this.name)
+    this.add.emit(this.name)
     this.show = false
   }
 }

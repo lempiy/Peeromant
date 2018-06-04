@@ -1,5 +1,5 @@
 import { BrowserModule } from '@angular/platform-browser';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgModule } from '@angular/core';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -20,7 +20,7 @@ import { ClarityModule } from "@clr/angular";
     BrowserModule,
     AppRoutingModule,
     ClarityModule,
-    NoopAnimationsModule
+    BrowserAnimationsModule
   ],
   providers: [],
   bootstrap: [AppComponent]
