@@ -4,13 +4,24 @@ import {
   RUNES, 
   EVENT_NEW_HUB_CREATED, 
   EVENT_HUB_REMOVED,
-  EVENT_GET_HUBS
+  EVENT_GET_HUBS,
+  EVENT_NEW_HUB_REQUEST
 } from '../defs/constants';
+import { WsState } from '../defs/wsstate.enum';
 import { AuthService } from './auth.service';
-import { Observable, fromEvent, race, from, of as obsOf, throwError } from 'rxjs'
+import { 
+  Observable,
+  Subscription, 
+  PartialObserver, 
+  fromEvent, 
+  race, 
+  from, 
+  of as obsOf, 
+  throwError 
+} from 'rxjs'
 import { shareReplay, filter, switchMap } from 'rxjs/operators'
 import { IEvent } from '../defs/event'
-import { PayloadHubs } from '../defs/payloads'
+import { PayloadHubs, PayloadCreateHub } from '../defs/payloads'
 import { ThreadSubject } from '../classes/thread-subject'
 
 @Injectable({
@@ -27,22 +38,28 @@ export class SignallerService {
   constructor(private auth: AuthService) {}
 
   ensureConnected():Observable<boolean> {
-    if (!this.socket) {
-      this.socket = new WebSocket(`ws://localhost:4000/ws?name=${this.name}`);
-      this.socket.onmessage = (e) => {
-        const data = JSON.parse(e.data)
-        this.onmessage(data)
-      }
-      console.log('connecting to signaller...')
-      this.$onOpen = fromEvent(this.socket, 'open').pipe(
-        shareReplay(1)
-      )
-      this.$onError = fromEvent(this.socket, 'error').pipe(
-        filter(e => (<WebSocket>e.target).readyState === WebSocket.CLOSED),
-        shareReplay(1)
-      )
-    }
-    return race(this.$onOpen, this.$onError).pipe(
+    return this.getState().pipe(
+      switchMap(state => {
+        switch (state) {
+          case WsState.Closed:
+          case WsState.Closing:
+          case WsState.NotCreated:
+            this.socket = new WebSocket(`ws://localhost:4000/ws?name=${this.name}`);
+            this.socket.onmessage = (e) => {
+              const data = JSON.parse(e.data)
+              this._onmessage(data)
+            }
+            console.log('connecting to signaller...')
+            this.$onOpen = fromEvent(this.socket, 'open').pipe(
+              shareReplay(1)
+            )
+            this.$onError = fromEvent(this.socket, 'error').pipe(
+              filter(e => (<WebSocket>e.target).readyState === WebSocket.CLOSED),
+              shareReplay(1)
+            )
+        }
+        return race(this.$onOpen, this.$onError)
+      }),
       switchMap((event:Event) => {
         if (event.type === 'error') return throwError('Error on connection to signaller')
         return obsOf(true)
@@ -50,12 +67,9 @@ export class SignallerService {
     )
   }
 
-  get online() {
-    return this.socket && this.socket.OPEN
-  }
-
-  set online(value) {
-    throw new Error('Should not set online state manually.')
+  getState():Observable<WsState> {
+    if (!this.socket) return obsOf(WsState.NotCreated)
+    return obsOf(this.socket.readyState)
   }
 
   get name ():string {
@@ -79,7 +93,13 @@ export class SignallerService {
       })
   }
 
-  onmessage(event:IEvent<any>):void {
+  subscribe<T>(eventName: string, a?: PartialObserver<T> | Function, onError?: (exception: any) => void, onCompleted?: () => void):Subscription {
+    return this
+      ._subject
+      .threadSubscribe(eventName, a as (value:T) => void, onError, onCompleted)
+  }
+
+  private _onmessage(event:IEvent<any>):void {
     console.log(event)
     if (this._repliesBuffer[event.id]) {
       return this._repliesBuffer[event.id](event)
@@ -107,6 +127,14 @@ export class SignallerService {
     return from(this.sendWithReply({
       action: EVENT_GET_HUBS,
       id: this.generateID()
+    }))
+  }
+
+  createHub(name: string):Observable<IEvent<PayloadCreateHub>> {
+    return from(this.sendWithReply({
+      action: EVENT_NEW_HUB_REQUEST,
+      id: this.generateID(),
+      payload: { name }
     }))
   }
 }
