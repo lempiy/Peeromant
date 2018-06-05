@@ -16,6 +16,7 @@ import {SignallerService} from '../../../services/signaller.service'
 import {AuthService} from '../../../services/auth.service'
 import { IEvent } from '../../../defs/event';
 import { Subscription, Observable, from } from 'rxjs';
+import { switchMap } from 'rxjs/operators'
 
 @Injectable({
   providedIn: 'root'
@@ -37,13 +38,19 @@ export class HubService {
   connect(initial:boolean, name:string):Observable<true|void> {
     this.initial = initial
     this.name = name
-    return from(
-      this._initialConnect()
-        .then(() => {
-          this.subscribeToEvents()
-          return this.refreshClientsList()
+    return this.signaller
+      .ensureConnected()//
+      .pipe(
+        switchMap(() => {
+          return from(
+            this._initialConnect()
+              .then(() => {
+                this.subscribeToEvents()
+                return this.refreshClientsList()
+              })
+              .then(() => this.initial || this.createLinks())
+            )
         })
-        .then(() => this.initial || this.createLinks())
       )
   }
 
@@ -115,7 +122,6 @@ export class HubService {
   }
 
   onClientConnected(e) {
-    
     this.clients.push({
       name: e.payload.name,
       status: Status.Pending
@@ -124,13 +130,13 @@ export class HubService {
       name: e.payload.name,
       status: Status.Pending
     }].concat(this.peers)
-    console.log('NEW CLIENT', this.peers)
   }
 
   onClientRemoved(e) {
       const i = this.clients.findIndex(c => c.name == e.payload.name)
       if (i == -1) return
       this.clients.splice(i, 1)
+      this.peers = this.clients.filter(c => c.name != this.auth.name)
       console.log(EVENT_CLIENT_REMOVED, this.clients)
   }
 
