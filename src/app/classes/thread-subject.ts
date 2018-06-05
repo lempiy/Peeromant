@@ -3,8 +3,8 @@ import { refCount } from 'rxjs/operators'
 
 export class ThreadSubject<T> extends Subject<T> {
     
-    private _threads: {[key: string]: Subject<T>}
-    private _refCounts: {[key: string]: number}
+    private _threads: {[key: string]: Subject<T>} = {}
+    private _refCounts: {[key: string]: number} = {}
     constructor() {
         super()
     }

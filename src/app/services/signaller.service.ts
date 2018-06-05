@@ -5,7 +5,8 @@ import {
   EVENT_NEW_HUB_CREATED, 
   EVENT_HUB_REMOVED,
   EVENT_GET_HUBS,
-  EVENT_NEW_HUB_REQUEST
+  EVENT_NEW_HUB_REQUEST,
+  EVENT_HUB_CONNECT
 } from '../defs/constants';
 import { WsState } from '../defs/wsstate.enum';
 import { AuthService } from './auth.service';
@@ -19,9 +20,9 @@ import {
   of as obsOf, 
   throwError 
 } from 'rxjs'
-import { shareReplay, filter, switchMap } from 'rxjs/operators'
+import { shareReplay, filter, map, switchMap } from 'rxjs/operators'
 import { IEvent } from '../defs/event'
-import { PayloadHubs, PayloadCreateHub } from '../defs/payloads'
+import { PayloadHubs, PayloadConfirm } from '../defs/payloads'
 import { ThreadSubject } from '../classes/thread-subject'
 
 @Injectable({
@@ -34,7 +35,7 @@ export class SignallerService {
   private _subject: ThreadSubject<IEvent<any>> = new ThreadSubject()
   private $onOpen: Observable<Event>
   private $onError: Observable<Event>
-
+  public hubs: string[] = []
   constructor(private auth: AuthService) {}
 
   ensureConnected():Observable<boolean> {
@@ -124,18 +125,42 @@ export class SignallerService {
   }
 
   getAvailableHubs():Observable<IEvent<PayloadHubs>> {
+    this.hubs = []
     return from(this.sendWithReply({
       action: EVENT_GET_HUBS,
       id: this.generateID()
-    }))
+    })).pipe(
+      map(data => {
+        this.hubs = data.payload.hubs || []
+        return data
+      })
+    )
   }
 
-  createHub(name: string):Observable<IEvent<PayloadCreateHub>> {
+  createHub(name: string):Observable<IEvent<PayloadConfirm>> {
     return from(this.sendWithReply({
       action: EVENT_NEW_HUB_REQUEST,
       id: this.generateID(),
       payload: { name }
     }))
+  }
+
+  connectHub(name: string):Observable<IEvent<PayloadConfirm>> {
+    return from(this.sendWithReply({
+      action: EVENT_HUB_CONNECT,
+      id: this.generateID(),
+      payload: { name }
+    }))
+  }
+
+  removeHub(name: string) {
+    const i = this.hubs.findIndex(h => h === name)
+    if (i === -1) return
+    this.hubs.splice(i, 1)
+  }
+
+  addHub(name: string) {
+    this.hubs.push(name)
   }
 }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Output, Input, EventEmitter } from '@angular/core';
 
 @Component({
   selector: 'peer-firelist',
@@ -6,6 +6,7 @@ import { Component, OnInit, Output, EventEmitter } from '@angular/core';
   styleUrls: ['./firelist.component.sass']
 })
 export class FirelistComponent implements OnInit {
+  @Input() list: string[]
   @Output() add: EventEmitter<string> = new EventEmitter()
   @Output() connect: EventEmitter<string> = new EventEmitter()
   show:boolean = false
@@ -22,6 +23,10 @@ export class FirelistComponent implements OnInit {
   onClickNewCamp() {
     this.name = ''
     this.show = true
+  }
+
+  onClickConnect(name: string) {
+    this.connect.emit(name)
   }
 
   applyNewHub() {

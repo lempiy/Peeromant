@@ -10,32 +10,15 @@
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td class="left">Johny, I'm here!</td>
-        <td>1</td>
-        <td>3min ago</td>
-        <td class="last">
-          <button type="button" class="btn btn-icon btn-main">
-            <clr-icon shape="connect"></clr-icon>
-          </button>
-        </td>
+      <tr *ngIf="!list.length">
+        <td align="center" colspan="4">No firecamps were created yet...</td>
       </tr>
-      <tr>
-        <td class="left">MSWord</td>
-        <td>2</td>
-        <td>10min ago</td>
+      <tr *ngFor="let camp of list">
+        <td class="left">{{camp}}</td>
+        <td>TBD</td>
+        <td>Nmin ago</td>
         <td class="last">
-          <button type="button" class="btn btn-icon btn-main">
-            <clr-icon shape="connect"></clr-icon>
-          </button>
-        </td>
-      </tr>
-      <tr>
-        <td class="left">Paymants</td>
-        <td>1</td>
-        <td>Just now</td>
-        <td class="last">
-          <button type="button" class="btn btn-icon btn-main">
+          <button type="button" (click)="onClickConnect(camp)" class="btn btn-icon btn-main">
             <clr-icon shape="connect"></clr-icon>
           </button>
         </td>

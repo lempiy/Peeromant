@@ -1,4 +1,4 @@
 <div class="wrapper-740">
   <peer-nickname></peer-nickname>
-  <peer-firelist (add)="onAddHub($event)" (connect)="onConnectHub($event)"></peer-firelist>
+  <peer-firelist [list]='sgn.hubs' (add)="onAddHub($event)" (connect)="onConnectHub($event)"></peer-firelist>
 </div>
