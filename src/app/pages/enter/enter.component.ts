@@ -41,28 +41,16 @@ export class EnterComponent implements OnInit, OnDestroy {
 
   onAddHub(event: string) {
     if (!event) return
-    this
-      .sgn
-      .createHub(event)
-      .toPromise()
-      .then(data => {
-        if (data.payload.success) {
-          this.r.navigate([`camp`, event])
-        }
-      })
+    this.r.navigate([`camp`, event], {
+      queryParams: {
+        initial: 1
+      }
+    })
   }
 
   onConnectHub(event: string) {
     if (!event) return
-    this
-      .sgn
-      .connectHub(event)
-      .toPromise()
-      .then(data => {
-        if (data.payload.success) {
-          this.r.navigate([`camp`, event])
-        }
-      })
+    this.r.navigate([`camp`, event])
   }
 
   ngOnDestroy() {
