@@ -5,8 +5,10 @@ import {
     EVENT_CANDIDATE_CONNECTION,
     EVENT_ANSWER_CONNECTION
 } from '../defs/constants';
+import { PeerState } from '../defs/peer-state.enum';
 import { ISignaller } from '../defs/signaller';
-import { Subscription } from 'rxjs';
+import { Subscription, Subject } from 'rxjs';
+import { IEvent } from '../defs/event';
 
 interface Marshaller {
     toJSON():string
@@ -24,6 +26,8 @@ export class Link {
     private isInitiator: boolean
     private initiatorDesc: RTCSessionDescription
     private subs: Subscription[] = []
+    public onChange: Subject<PeerState> = new Subject()
+    public onMessage: Subject<any> = new Subject()
     constructor(props) {
         this.initiator = props.initiator
         this.responder = props.responder
@@ -55,31 +59,51 @@ export class Link {
     }
 
     get online() {
-        return this.connection && this.connection.iceConnectionState === "connected"
+        if (!this.connection) return false;
+        switch (this.connection.iceConnectionState) {
+            case PeerState.Connected:
+            case PeerState.Completed:
+                return true
+            default:
+                return false
+        }
     }
 
     set online(value) {
         throw new Error('Should not set online state manually.')
     }
 
+    get pending() {
+        if (!this.connection) return true
+        switch (this.connection.iceConnectionState) {
+            case PeerState.Checking:
+            case PeerState.New:
+                return true
+            default:
+                return false
+        }
+    }
+
+    get failed() {
+        return this.connection && this.connection.iceConnectionState === "failed"
+    }
+
     connect() {
-        this.connection = new RTCPeerConnection(STUN_TURN)        
+        this.connection = new RTCPeerConnection(STUN_TURN)
+        this.onChange.next((<PeerState>this.connection.iceConnectionState))      
         this.connection.onicecandidate = e => this.iceCallback(e);
         this.connection.ondatachannel = e => this.receiveChannelCallback(e);
+        this.connection.oniceconnectionstatechange = () => {
+            this.onChange.next((<PeerState>this.connection.iceConnectionState))
+        }
 
         if (this.isInitiator) {
             this.sendChannel = this.connection.createDataChannel(SEND_DATA_CHANNEL, null)
-            this.sendChannel.onopen = () => {
-                console.log(`Send Channel ${this.responder} Openned`)
-                setInterval(() => {
-                    console.log("SEND DATA")
-                    this.sendChannel.send("TIME: " + Date.now())
-                }, 1000)
-            }
+            this.sendChannel.onopen = () => console.log(`Send Channel ${this.responder} Openned`)
             this.sendChannel.onclose = () => console.log(`Send Channel ${this.responder} Closed`)
-            this.sendChannel.onmessage = (e) => console.log(`Received message from ${this.responder}: `, e.data)
+            this.sendChannel.onmessage = (e) => this.onMessage.next(e.data)
             this.connection.createOffer().then(desc => {
-                console.log("createOffer")
+                console.log("Create Connection Offer")
                 this.connection.setLocalDescription(desc);
                 this.signaller.send({
                     action: EVENT_OFFER_CONNECTION,
@@ -94,7 +118,7 @@ export class Link {
         } else {
             this.connection.setRemoteDescription(this.initiatorDesc)
             this.connection.createAnswer().then(desc => {
-                console.log("createAnswer")
+                console.log("Create Connection Answer")
                 this.connection.setLocalDescription(desc)
                 this.signaller.send({
                     action: EVENT_ANSWER_CONNECTION,
@@ -110,6 +134,7 @@ export class Link {
     }
 
     destroy() {
+        this.connection.close()
         this.subs.forEach(s => s.unsubscribe())
     }
 
@@ -147,18 +172,19 @@ export class Link {
         }
     }
 
+    send(event) {
+        if (this.isInitiator) {
+            this.sendChannel.send(event)
+        } else {
+            this.recieveChannel.send(event)
+        }
+    }
+
     receiveChannelCallback(event) {
         if (this.isInitiator) return
-        console.log('receiveChannelCallback', event)
         this.recieveChannel = event.channel
-        this.recieveChannel.onmessage = (event) => console.log(`Received message from ${this.initiator}: `, event.data)
+        this.recieveChannel.onmessage = (event) => this.onMessage.next(event.data)
         this.recieveChannel.onclose = () => console.log("Receive Channel Closed")
-        this.recieveChannel.onopen = () => {
-            console.log("Receive Channel Openned")
-            setInterval(() => {
-                console.log("REPLY DATA")
-                this.recieveChannel.send("RANDOM: " + Math.round(Math.random()*100))
-            }, 1000)
-        }
+        this.recieveChannel.onopen = () => console.log("Receive Channel Openned")
     }
 }

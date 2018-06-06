@@ -11,12 +11,14 @@ import {
   EVENT_CLIENT_REMOVED,
   EVENT_OFFER_CONNECTION
 } from '../../../defs/constants'
-import {Link} from '../../../classes/link'
-import {SignallerService} from '../../../services/signaller.service'
-import {AuthService} from '../../../services/auth.service'
+import { Link } from '../../../classes/link'
+import { SignallerService } from '../../../services/signaller.service'
+import { AuthService } from '../../../services/auth.service'
 import { IEvent } from '../../../defs/event';
-import { Subscription, Observable, from } from 'rxjs';
+import { Subscription, Observable, from, Subject } from 'rxjs';
 import { switchMap } from 'rxjs/operators'
+import { PeerState } from '../../../defs/peer-state.enum';
+import { ThreadSubject } from '../../../classes/thread-subject';
 
 @Injectable({
   providedIn: 'root'
@@ -26,8 +28,10 @@ export class HubService {
   name: string
   initial: boolean
   links: {[key:string]:Link}
+  private linkSubs: {[key:string]:Subscription[]}
   subs: Subscription[]
   peers: IPeer[] = []
+  $threads: ThreadSubject<any> = new ThreadSubject()
 
   constructor(
     private signaller: SignallerService,
@@ -39,7 +43,7 @@ export class HubService {
     this.initial = initial
     this.name = name
     return this.signaller
-      .ensureConnected()//
+      .ensureConnected()
       .pipe(
         switchMap(() => {
           return from(
@@ -61,6 +65,7 @@ export class HubService {
   subscribeToEvents() {
     this.subs = []
     this.links = {}
+    this.linkSubs = {}
     this.subs.push(
       this.signaller.subscribe(EVENT_CLIENT_CONNECTED, e => this.onClientConnected(e)),
       this.signaller.subscribe(EVENT_CLIENT_REMOVED, e => this.onClientRemoved(e)),
@@ -73,13 +78,16 @@ export class HubService {
     Object.entries(this.links).forEach(([_, link]) => {
       link.destroy()
     })
+    Object.entries(this.linkSubs).forEach(([_, subs]) => {
+      subs.forEach(s => s.unsubscribe())
+    })
     this.links = {}
     this.clients = []
   }
 
   createLinks() {
     this.clients.forEach(client => {
-      console.log('Begin create link '+client.name)
+      console.log('Start creating link '+client.name)
       if (client.name === this.clientName) return
       const link = new Link({
         initiator: this.clientName,
@@ -88,12 +96,19 @@ export class HubService {
         isInitiator: true,
       })
       this.links[client.name] = link
+      this.linkSubs[client.name] = [
+        link.onChange.subscribe(data => {
+          this.onChangeLinkState(client.name, link, data)
+        }),
+        link.onMessage.subscribe(msg => {
+          this.onMessage(client.name, msg)
+        })
+      ]
       link.connect()
     })
   }
 
   onLinkOffer(e) {
-    console.log('onlinkoffer', e)
     const link = new Link({
         initiator: e.payload.from,
         responder: this.clientName,
@@ -102,7 +117,25 @@ export class HubService {
         initiatorDesc: e.payload.desc
     })
     this.links[e.payload.from] = link
+    this.linkSubs[e.payload.from] = [
+      link.onChange.subscribe(data => {
+        this.onChangeLinkState(e.payload.from, link, data)
+      }),
+      link.onMessage.subscribe(msg => {
+        this.onMessage(e.payload.from, msg)
+      })
+    ]
     link.connect()
+  }
+
+  onMessage(from: string, msg: any) {
+    this.$threads.emit(from, msg)
+  }
+
+  onChangeLinkState(name: string, link: Link, state: PeerState) {
+    this.peers.forEach(p => {
+      if (p.name === name) p.$status.next(this.computeStatus(name))
+    })
   }
 
   refreshClientsList() {
@@ -112,7 +145,7 @@ export class HubService {
             this.clients = reply.payload.clients
             .map(c => ({
               name: c,
-              status: Status.Online
+              $status: new Subject<Status>()
             }));
             this.peers = this.clients.filter(c => c.name !== this.auth.name)
             return Promise.resolve(this.clients)
@@ -121,14 +154,23 @@ export class HubService {
       )
   }
 
+  computeStatus(linkName: string):Status {
+    const link = this.links[linkName]
+    if (!link) return Status.Pending
+    if (link.online) return Status.Online
+    if (link.pending) return Status.Pending
+    if (link.failed) return Status.Offline
+    return Status.Offline
+  }
+
   onClientConnected(e) {
     this.clients.push({
       name: e.payload.name,
-      status: Status.Pending
+      $status: new Subject<Status>()
     })
     this.peers = [{
       name: e.payload.name,
-      status: Status.Pending
+      $status: new Subject<Status>()
     }].concat(this.peers)
   }
 
@@ -136,8 +178,15 @@ export class HubService {
       const i = this.clients.findIndex(c => c.name == e.payload.name)
       if (i == -1) return
       this.clients.splice(i, 1)
+      this.links[e.payload.name].destroy()
+      delete this.links[e.payload.name]
+      if (this.linkSubs[e.payload.name]) {
+        const subs = this.linkSubs[e.payload.name]
+        subs.forEach(s => {
+          s.unsubscribe()
+        });
+      }
       this.peers = this.clients.filter(c => c.name != this.auth.name)
-      console.log(EVENT_CLIENT_REMOVED, this.clients)
   }
 
   _initialConnect():Promise<IEvent<any>> {
@@ -154,7 +203,6 @@ export class HubService {
         payload,
     })
     .then(reply => {
-        console.log(reply)
         if (reply.action == EVENT_ERROR) return Promise.reject(reply.payload.info)
         else if (reply.action) return Promise.resolve(reply)
         else throw new Error('Unexpected reply')

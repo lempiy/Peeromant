@@ -6,8 +6,7 @@
     "paths": {
       "@root/*": ["/*"],
       "@app/*": ["app/*"]
-    },
-    "types": []
+    }
   },
   "exclude": [
     "src/test.ts",
