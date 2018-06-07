@@ -1,3 +1,3 @@
 # Peeromant
 
-Burn out!
+Burn out !
