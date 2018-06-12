@@ -62,7 +62,7 @@ export class HubService {
     return this.auth.name
   }
 
-  subscribeToEvents() {
+  private subscribeToEvents() {
     this.subs = []
     this.links = {}
     this.linkSubs = {}
@@ -73,7 +73,7 @@ export class HubService {
     )
   }
 
-  destroy() {
+  private destroy() {
     this.subs.forEach(s => s.unsubscribe())
     Object.entries(this.links).forEach(([_, link]) => {
       link.destroy()
@@ -85,7 +85,7 @@ export class HubService {
     this.clients = []
   }
 
-  createLinks() {
+  private createLinks() {
     this.clients.forEach(client => {
       console.log('Start creating link '+client.name)
       if (client.name === this.clientName) return
@@ -108,7 +108,7 @@ export class HubService {
     })
   }
 
-  onLinkOffer(e) {
+  private onLinkOffer(e) {
     const link = new Link({
         initiator: e.payload.from,
         responder: this.clientName,
@@ -132,13 +132,13 @@ export class HubService {
     this.$threads.emit(from, msg)
   }
 
-  onChangeLinkState(name: string, link: Link, state: PeerState) {
+  private onChangeLinkState(name: string, link: Link, state: PeerState) {
     this.peers.forEach(p => {
       if (p.name === name) p.$status.next(this.computeStatus(name))
     })
   }
 
-  refreshClientsList() {
+  private refreshClientsList() {
     return this.signalWithReply(EVENT_GET_CLIENTS, null)
       .then(
           reply => {
@@ -154,7 +154,7 @@ export class HubService {
       )
   }
 
-  computeStatus(linkName: string):Status {
+  private computeStatus(linkName: string):Status {
     const link = this.links[linkName]
     if (!link) return Status.Pending
     if (link.online) return Status.Online
@@ -163,7 +163,7 @@ export class HubService {
     return Status.Offline
   }
 
-  onClientConnected(e) {
+  private onClientConnected(e) {
     this.clients.push({
       name: e.payload.name,
       $status: new Subject<Status>()
@@ -174,7 +174,7 @@ export class HubService {
     }].concat(this.peers)
   }
 
-  onClientRemoved(e) {
+  private onClientRemoved(e) {
       const i = this.clients.findIndex(c => c.name == e.payload.name)
       if (i == -1) return
       this.clients.splice(i, 1)
@@ -189,11 +189,15 @@ export class HubService {
       this.peers = this.clients.filter(c => c.name != this.auth.name)
   }
 
-  _initialConnect():Promise<IEvent<any>> {
+  private _initialConnect():Promise<IEvent<any>> {
     return this.signalWithReply(
         this.initial ? EVENT_NEW_HUB_REQUEST : EVENT_HUB_CONNECT,
         {name: this.name}
     )
+  }
+
+  send(whom: string, data: any) {
+    this.links[whom].send(data)
   }
 
   signalWithReply(action: string, payload:any):Promise<IEvent<any>> {
@@ -201,6 +205,20 @@ export class HubService {
         action,
         id: this.signaller.generateID(),
         payload,
+    })
+    .then(reply => {
+        if (reply.action == EVENT_ERROR) return Promise.reject(reply.payload.info)
+        else if (reply.action) return Promise.resolve(reply)
+        else throw new Error('Unexpected reply')
+    })
+  }
+
+  signalWithReplyTo(action: string, to:string, payload:any):Promise<IEvent<any>> {
+    return this.signaller.sendWithReply({
+        action,
+        id: this.signaller.generateID(),
+        payload,
+        to,
     })
     .then(reply => {
         if (reply.action == EVENT_ERROR) return Promise.reject(reply.payload.info)

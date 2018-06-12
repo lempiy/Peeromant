@@ -18,3 +18,13 @@ export interface PayloadHubCreated {
 export interface PayloadHubRemoved {
     name: string
 }
+
+export interface PayloadTransferFileRequest {
+    files: IFileTransfer[]
+}
+
+export interface IFileTransfer {
+    name: string
+    size: number
+    type: string
+}
