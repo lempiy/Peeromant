@@ -31,23 +31,25 @@ export class TransferService {
 
   private requestTransfer(to:string, files: File[]):Promise<IEvent<PayloadConfirm>> {
     return this.hs.signalWithReplyTo(EVENT_CLIENT_REPLY_REQUEST,
-      to, 
+      to,
       {
+        from: this.hs.clientName,
         files: files.map(f => ({name: f.name, size: f.size, type: f.type}))
       }
     )
   }
 
-  confirmTransferRequest(to: string):Promise<IEvent<any>> {
-    return this.hs.signalWithReply(EVENT_CLIENT_REPLY_RESPONSE, {
+  confirmTransferRequest(to: string, id: string):Promise<IEvent<any>> {
+    console.log("confirmTransferRequest", to, id)
+    return this.hs.signalWithReplyTo(EVENT_CLIENT_REPLY_RESPONSE, to, {
       success: true
-    })
+    }, id)
   }
 
-  rejectTransferRequest(to: string):Promise<IEvent<any>> {
-    return this.hs.signalWithReply(EVENT_CLIENT_REPLY_RESPONSE, {
+  rejectTransferRequest(to: string, id: string):Promise<IEvent<any>> {
+    return this.hs.signalWithReplyTo(EVENT_CLIENT_REPLY_RESPONSE, to, {
       success: false,
       info: 'User rejected file transfer request'
-    })
+    }, id)
   }
 }

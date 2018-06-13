@@ -20,6 +20,7 @@ export interface PayloadHubRemoved {
 }
 
 export interface PayloadTransferFileRequest {
+    from: string
     files: IFileTransfer[]
 }
 

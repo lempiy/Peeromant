@@ -4,13 +4,21 @@
         <peer-host></peer-host>
     </div>
     <div class="col-lg-6 col-md-12 col-sm-12 col-xs-12">
-      <peer-usercard *ngFor='let peer of hs.peers | pair:true' [client]='peer'></peer-usercard>
+      <peer-usercard 
+        *ngFor='let peer of hs.peers | pair:true' 
+        (confirm)='replyOnRequest($event)' 
+        [client]='peer'>
+      </peer-usercard>
     </div>
     <div class="col-lg-6 col-md-12 col-sm-12 col-xs-12">
-      <peer-usercard *ngFor='let peer of hs.peers | pair:false' [client]='peer'></peer-usercard>
+      <peer-usercard 
+        *ngFor='let peer of hs.peers | pair:false'
+        (confirm)='replyOnRequest($event)' 
+        [client]='peer'>
+      </peer-usercard>
     </div>
     <div class="col-lg-12">
-      <button class="btn btn-out mt-1">Transfer to all</button>
+      <button class="btn btn-out mt-1" (click)="transferFiles()">Transfer to all</button>
     </div>
   </div>
 </div>

@@ -14,7 +14,7 @@
                 </span>
             </div>
         </div>
-        <div class="card-text text-center">
+        <div class="card-text text-center" *ngIf="!client.pendingRequest; else pending;">
             <clr-datagrid [(clrDgSelected)]="fs.selected[client.name]" [clDgRowSelection]="true">
                 <clr-dg-column>File Name</clr-dg-column>
                 <clr-dg-column>Size</clr-dg-column>
@@ -27,8 +27,30 @@
                 </clr-dg-placeholder>
             </clr-datagrid>
         </div>
+        <ng-template #pending>
+            <div class="card-text text-center" *ngIf="client.pendingRequest">
+                <clr-datagrid>
+                    <clr-dg-column>File Name</clr-dg-column>
+                    <clr-dg-column>Size</clr-dg-column>
+                    <clr-dg-row *ngFor="let file of client.pendingRequest.files">
+                        <clr-dg-cell>{{file.name}}</clr-dg-cell>
+                        <clr-dg-cell>{{file.size}}</clr-dg-cell>
+                    </clr-dg-row>
+                    <clr-dg-placeholder>
+                    Some error occured...
+                    </clr-dg-placeholder>
+                    <clr-dg-footer>{{client.pendingRequest.length}} files</clr-dg-footer>
+                </clr-datagrid>
+            </div>
+        </ng-template>
     </div>
-    <div class="card-footer">
+    <div class="card-footer" *ngIf="!client.pendingRequest; else selectConfirm;">
         <button class="btn btn-sm btn-out">Transfer</button>
     </div>
+    <ng-template #selectConfirm>
+        <div class="card-footer">
+            <button class="btn btn-sm btn-main" (click)="onConfirmTransfer()">Accept</button>
+            <button class="btn btn-sm btn-out" (click)="onRejectTransfer()">Reject</button>
+        </div>
+    </ng-template>
 </div>

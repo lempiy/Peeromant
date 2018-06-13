@@ -1,8 +1,9 @@
 import { Component, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { FilesService } from '../../services/files.service'
-import { Input } from '@angular/core'
-import { IPeer } from '../../defs/peer'
+import { Input, Output, EventEmitter } from '@angular/core'
+import { IPeer, IConfirmEvent } from '../../defs/peer'
 import { Status } from '../../../../defs/status.enum';
+import { TransferService } from '../../services/transfer.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -13,11 +14,16 @@ import { Subscription } from 'rxjs';
 export class UsercardComponent implements OnInit, OnDestroy {
   @Input()
   readonly client: IPeer
+  @Output()
+  confirm: EventEmitter<IConfirmEvent> = new EventEmitter()
   private sub: Subscription
   status: Status = Status.Pending
 
   selected:any[] = []
-  constructor(public fs: FilesService, private zone: NgZone) {}
+  constructor(
+    public fs: FilesService,
+    private zone: NgZone,
+    private ts: TransferService) {}
 
   ngOnInit() {
     this.sub = this.client.$status.subscribe(
@@ -25,6 +31,20 @@ export class UsercardComponent implements OnInit, OnDestroy {
         this.zone.run(() => this.status = e)
       }
     )
+  }
+
+  onConfirmTransfer() {
+    this.confirm.emit({
+      confirm: true,
+      peer: this.client
+    })
+  }
+
+  onRejectTransfer() {
+    this.confirm.emit({
+      confirm: false,
+      peer: this.client
+    })
   }
 
   ngOnDestroy() {

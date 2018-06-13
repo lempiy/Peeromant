@@ -87,7 +87,7 @@ export class SignallerService {
 
   sendWithReply(event: IEvent<any>):Promise<IEvent<any>> {
       return new Promise((resolve, reject) => {
-          const id = this.generateID()
+          const id = event.id || this.generateID()
           event = Object.assign({}, event, {id})
           this._repliesBuffer[id] = resolve
           this.send(event)

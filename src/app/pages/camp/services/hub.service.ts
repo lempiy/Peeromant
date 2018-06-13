@@ -15,10 +15,11 @@ import { Link } from '../../../classes/link'
 import { SignallerService } from '../../../services/signaller.service'
 import { AuthService } from '../../../services/auth.service'
 import { IEvent } from '../../../defs/event';
-import { Subscription, Observable, from, Subject } from 'rxjs';
+import { Subscription, Observable, from, Subject, PartialObserver } from 'rxjs';
 import { switchMap } from 'rxjs/operators'
 import { PeerState } from '../../../defs/peer-state.enum';
 import { ThreadSubject } from '../../../classes/thread-subject';
+import { FilesService } from './files.service';
 
 @Injectable({
   providedIn: 'root'
@@ -35,7 +36,8 @@ export class HubService {
 
   constructor(
     private signaller: SignallerService,
-    private auth: AuthService) {
+    private auth: AuthService,
+    private fs: FilesService) {
 
   }
 
@@ -60,6 +62,11 @@ export class HubService {
 
   get clientName() {
     return this.auth.name
+  }
+
+  subscribe<T>(eventName: string, a?: PartialObserver<T> | Function, onError?: (exception: any) => void, onCompleted?: () => void):Subscription {
+    console.log("SUBS HS ", eventName)
+    return this.signaller.subscribe(eventName, a, onError)
   }
 
   private subscribeToEvents() {
@@ -105,6 +112,7 @@ export class HubService {
         })
       ]
       link.connect()
+      this.fs.selected[client.name] = []
     })
   }
 
@@ -172,6 +180,7 @@ export class HubService {
       name: e.payload.name,
       $status: new Subject<Status>()
     }].concat(this.peers)
+    this.fs.selected[e.payload.name] = []
   }
 
   private onClientRemoved(e) {
@@ -187,6 +196,7 @@ export class HubService {
         });
       }
       this.peers = this.clients.filter(c => c.name != this.auth.name)
+      delete this.fs.selected[e.payload.name]
   }
 
   private _initialConnect():Promise<IEvent<any>> {
@@ -200,10 +210,10 @@ export class HubService {
     this.links[whom].send(data)
   }
 
-  signalWithReply(action: string, payload:any):Promise<IEvent<any>> {
+  signalWithReply(action: string, payload:any, id?:string):Promise<IEvent<any>> {
     return this.signaller.sendWithReply({
         action,
-        id: this.signaller.generateID(),
+        id: id || this.signaller.generateID(),
         payload,
     })
     .then(reply => {
@@ -213,10 +223,10 @@ export class HubService {
     })
   }
 
-  signalWithReplyTo(action: string, to:string, payload:any):Promise<IEvent<any>> {
+  signalWithReplyTo(action: string, to:string, payload:any, id?:string):Promise<IEvent<any>> {
     return this.signaller.sendWithReply({
         action,
-        id: this.signaller.generateID(),
+        id: id || this.signaller.generateID(),
         payload,
         to,
     })
