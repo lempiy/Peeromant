@@ -49,7 +49,11 @@ export class CampComponent implements OnInit, OnDestroy {
 
   replyOnRequest(event: IConfirmEvent) {
     return (event.confirm ?
-      this.ts.confirmTransferRequest(event.peer.name, event.peer.pendingRequest.id) :
+      this.ts.confirmTransferRequest(
+        event.peer.name,
+        event.peer.pendingRequest.id,
+        event.peer.pendingRequest.files
+      ) :
       this.ts.rejectTransferRequest(event.peer.name, event.peer.pendingRequest.id))
       .then(() => event.peer.pendingRequest = null)
   }

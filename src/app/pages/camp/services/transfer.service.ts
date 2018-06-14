@@ -15,8 +15,8 @@ import { SignallerService } from '../../../services/signaller.service';
 })
 export class TransferService {
   private subs: Subscription[] = []
-  private pendingTransfers: {[key:string]: ITFile}
-  private pendingAccepts: {[key:string]: ITFile}
+  private pendingTransfers: {[key:string]: ITFile} = {}
+  private pendingAccepts: {[key:string]: ITFile} = {}
   constructor(private hs:HubService, private sgn:SignallerService) { }
 
   transferFiles(to: string, files: File[]) {
@@ -30,6 +30,7 @@ export class TransferService {
   }
 
   private startStream(to:string, files: File[]) {
+    console.log(this.pendingTransfers)
     console.log('streaming ...')
   }
 
@@ -47,7 +48,9 @@ export class TransferService {
     )
   }
 
-  confirmTransferRequest(to: string, id: string):Promise<IEvent<any>> {
+  confirmTransferRequest(to: string, id: string, files: ITFile[]):Promise<IEvent<any>> {
+    files.forEach(f => this.pendingAccepts[f.channel] = f)
+    console.log(this.pendingAccepts)
     return this.hs.signalWithReplyTo(EVENT_CLIENT_REPLY_RESPONSE, to, {
       success: true
     }, id)
