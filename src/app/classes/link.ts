@@ -9,6 +9,7 @@ import { PeerState } from '../defs/peer-state.enum';
 import { ISignaller } from '../defs/signaller';
 import { Subscription, Subject } from 'rxjs';
 import { IEvent } from '../defs/event';
+import { Channel } from './channel';
 
 interface Marshaller {
     toJSON():string
@@ -22,7 +23,6 @@ export class Link {
     private recieveChannel: RTCDataChannel
     private signaller: ISignaller<any>
     private initiatorCandidate: string
-    private responderCandidate: string
     private isInitiator: boolean
     private initiatorDesc: RTCSessionDescription
     private subs: Subscription[] = []
@@ -31,14 +31,9 @@ export class Link {
     constructor(props) {
         this.initiator = props.initiator
         this.responder = props.responder
-        this.connection = null
-        this.sendChannel = null
-        this.recieveChannel = null
         this.signaller = props.signaller
-        this.initiatorCandidate = null
-        this.responderCandidate = null
         this.isInitiator = props.isInitiator
-        this.initiatorDesc = props.initiatorDesc || null
+        this.initiatorDesc = props.initiatorDesc
         this.subscribe()
     }
 
@@ -56,6 +51,10 @@ export class Link {
                 this.connection.addIceCandidate(candidate);
             })
         )
+    }
+
+    getChannel(label: string):Channel {
+        return new Channel(this.connection, label)
     }
 
     get online() {

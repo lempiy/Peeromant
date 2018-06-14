@@ -18,8 +18,9 @@ interface ITransferRequest {
     id: string
 }
 
-interface ITFile {
+export interface ITFile {
     name: string,
     size: number,
+    channel: string,
     progress?: number
 }

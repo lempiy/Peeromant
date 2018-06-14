@@ -7,13 +7,17 @@ import {
 import { IEvent } from '../../../defs/event';
 import { PayloadConfirm } from '../../../defs/payloads';
 import { Subscription } from 'rxjs';
+import { ITFile } from '../defs/peer';
+import { SignallerService } from '../../../services/signaller.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TransferService {
   private subs: Subscription[] = []
-  constructor(private hs:HubService) { }
+  private pendingTransfers: {[key:string]: ITFile}
+  private pendingAccepts: {[key:string]: ITFile}
+  constructor(private hs:HubService, private sgn:SignallerService) { }
 
   transferFiles(to: string, files: File[]) {
     this.requestTransfer(to, files)
@@ -30,17 +34,20 @@ export class TransferService {
   }
 
   private requestTransfer(to:string, files: File[]):Promise<IEvent<PayloadConfirm>> {
+    const fls: ITFile[] = files.map(f => 
+      ({name: f.name, size: f.size, channel: this.sgn.generateID()})
+    )
+    fls.forEach(f => this.pendingTransfers[f.channel] = f)
     return this.hs.signalWithReplyTo(EVENT_CLIENT_REPLY_REQUEST,
       to,
       {
         from: this.hs.clientName,
-        files: files.map(f => ({name: f.name, size: f.size, type: f.type}))
+        files: fls
       }
     )
   }
 
   confirmTransferRequest(to: string, id: string):Promise<IEvent<any>> {
-    console.log("confirmTransferRequest", to, id)
     return this.hs.signalWithReplyTo(EVENT_CLIENT_REPLY_RESPONSE, to, {
       success: true
     }, id)

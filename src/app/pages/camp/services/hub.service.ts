@@ -20,6 +20,7 @@ import { switchMap } from 'rxjs/operators'
 import { PeerState } from '../../../defs/peer-state.enum';
 import { ThreadSubject } from '../../../classes/thread-subject';
 import { FilesService } from './files.service';
+import { Channel } from '../../../classes/channel';
 
 @Injectable({
   providedIn: 'root'
@@ -62,6 +63,10 @@ export class HubService {
 
   get clientName() {
     return this.auth.name
+  }
+
+  getChannel(peer: string, label: string):Channel {
+    return this.links[peer].getChannel(label)
   }
 
   subscribe<T>(eventName: string, a?: PartialObserver<T> | Function, onError?: (exception: any) => void, onCompleted?: () => void):Subscription {
