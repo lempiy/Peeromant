@@ -20,10 +20,7 @@ export class Channel {
         this.channel.onclose = () => console.log(`Send Channel ${this.label} Closed`)
         this.channel.onmessage = (e) => this.onMessage.next(e.data)
         return race(
-            fromEvent(this.channel, 'open').pipe(map(v => {
-                console.log('OPEned', this.label)
-                return v
-            })), 
+            fromEvent(this.channel, 'open'), 
             fromEvent(this.channel, "error")).pipe(
                 switchMap(e => e.type == 'error' ?
                     throwError(`Error upon creating data channel ${this.label}`) :
