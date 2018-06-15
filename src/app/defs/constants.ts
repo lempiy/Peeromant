@@ -22,3 +22,5 @@ export const RUNES = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV
 
 export const STUN_TURN = null
 export const SEND_DATA_CHANNEL = 'SEND_DATA_CHANNEL'
+
+export const CHUNCK_SIZE = 16384;

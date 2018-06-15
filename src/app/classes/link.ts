@@ -28,6 +28,7 @@ export class Link {
     private subs: Subscription[] = []
     public onChange: Subject<PeerState> = new Subject()
     public onMessage: Subject<any> = new Subject()
+    public onNewChannel: Subject<Channel> = new Subject() 
     constructor(props) {
         this.initiator = props.initiator
         this.responder = props.responder
@@ -180,10 +181,15 @@ export class Link {
     }
 
     receiveChannelCallback(event) {
-        if (this.isInitiator) return
-        this.recieveChannel = event.channel
-        this.recieveChannel.onmessage = (event) => this.onMessage.next(event.data)
-        this.recieveChannel.onclose = () => console.log("Receive Channel Closed")
-        this.recieveChannel.onopen = () => console.log("Receive Channel Openned")
+        if (event.channel.label != SEND_DATA_CHANNEL) {
+            this.onNewChannel.next(
+                new Channel(this.connection, event.channel.label, event.channel)
+            )
+        } else {
+            this.recieveChannel = event.channel
+            this.recieveChannel.onmessage = (event) => this.onMessage.next(event.data)
+            this.recieveChannel.onclose = () => console.log("Receive Channel Closed")
+            this.recieveChannel.onopen = () => console.log("Receive Channel Openned")
+        }
     }
 }

@@ -14,8 +14,8 @@
                 </span>
             </div>
         </div>
-        <div class="card-text text-center" *ngIf="!client.pendingRequest; else pending;">
-            <clr-datagrid [(clrDgSelected)]="fs.selected[client.name]" [clDgRowSelection]="true">
+        <div class="card-text text-center" [ngSwitch]="client.state">
+            <clr-datagrid *ngSwitchCase="LinkState.Waiting"[(clrDgSelected)]="fs.selected[client.name]" [clDgRowSelection]="true">
                 <clr-dg-column>File Name</clr-dg-column>
                 <clr-dg-column>Size</clr-dg-column>
                 <clr-dg-row *clrDgItems="let file of fs.files" [clrDgItem]="file">
@@ -23,26 +23,22 @@
                     <clr-dg-cell>{{file.size}}</clr-dg-cell>
                 </clr-dg-row>
                 <clr-dg-placeholder>
-                  File desk is empty...
+                File desk is empty...
                 </clr-dg-placeholder>
             </clr-datagrid>
+            <clr-datagrid *ngSwitchCase="LinkState.Pending">
+                <clr-dg-column>File Name</clr-dg-column>
+                <clr-dg-column>Size</clr-dg-column>
+                <clr-dg-row *ngFor="let file of client.pendingRequest.files">
+                    <clr-dg-cell>{{file.name}}</clr-dg-cell>
+                    <clr-dg-cell>{{file.size}}</clr-dg-cell>
+                </clr-dg-row>
+                <clr-dg-placeholder>
+                Some error occured...
+                </clr-dg-placeholder>
+                <clr-dg-footer>{{client.pendingRequest.length}} files</clr-dg-footer>
+            </clr-datagrid>
         </div>
-        <ng-template #pending>
-            <div class="card-text text-center" *ngIf="client.pendingRequest">
-                <clr-datagrid>
-                    <clr-dg-column>File Name</clr-dg-column>
-                    <clr-dg-column>Size</clr-dg-column>
-                    <clr-dg-row *ngFor="let file of client.pendingRequest.files">
-                        <clr-dg-cell>{{file.name}}</clr-dg-cell>
-                        <clr-dg-cell>{{file.size}}</clr-dg-cell>
-                    </clr-dg-row>
-                    <clr-dg-placeholder>
-                    Some error occured...
-                    </clr-dg-placeholder>
-                    <clr-dg-footer>{{client.pendingRequest.length}} files</clr-dg-footer>
-                </clr-datagrid>
-            </div>
-        </ng-template>
     </div>
     <div class="card-footer" *ngIf="!client.pendingRequest; else selectConfirm;">
         <button class="btn btn-sm btn-out">Transfer</button>

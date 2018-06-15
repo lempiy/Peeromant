@@ -5,6 +5,8 @@ import { IPeer, IConfirmEvent } from '../../defs/peer'
 import { Status } from '../../../../defs/status.enum';
 import { TransferService } from '../../services/transfer.service';
 import { Subscription } from 'rxjs';
+import { LinkState } from '../../defs/peer-state.enum';
+import { ClientChangeType } from '../../defs/client-change.enum';
 
 @Component({
   selector: 'peer-usercard',
@@ -18,6 +20,7 @@ export class UsercardComponent implements OnInit, OnDestroy {
   confirm: EventEmitter<IConfirmEvent> = new EventEmitter()
   private sub: Subscription
   status: Status = Status.Pending
+  public LinkState = LinkState
 
   selected:any[] = []
   constructor(
@@ -26,9 +29,16 @@ export class UsercardComponent implements OnInit, OnDestroy {
     private ts: TransferService) {}
 
   ngOnInit() {
-    this.sub = this.client.$status.subscribe(
+    this.sub = this.client.$change.subscribe(
       e => {
-        this.zone.run(() => this.status = e)
+        switch(e.type) {
+          case ClientChangeType.Status:
+            this.zone.run(() => this.status = <Status>e.value)
+            break
+          case ClientChangeType.State:
+            this.zone.run(() => this.client.state = <LinkState>e.value)
+            break
+        }
       }
     )
   }

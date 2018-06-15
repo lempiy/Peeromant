@@ -101,12 +101,10 @@ export class SignallerService {
   }
 
   private _onmessage(event:IEvent<any>):void {
-    console.log(event)
     if (this._repliesBuffer[event.id]) {
       return this._repliesBuffer[event.id](event)
     }
     if (event.payload.from) {
-      console.log(`${event.action}|${event.payload.from}`)
       this._subject.emit(`${event.action}|${event.payload.from}`, event)
     }
     return this._subject.emit(event.action, event)

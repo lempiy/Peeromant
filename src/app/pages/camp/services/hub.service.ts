@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { IPeer } from '../defs/peer'
+import { IPeer, IProgress, IClientChange } from '../defs/peer'
 import { Status } from '../../../defs/status.enum'
 import {
   EVENT_NEW_HUB_REQUEST, 
@@ -21,6 +21,8 @@ import { PeerState } from '../../../defs/peer-state.enum';
 import { ThreadSubject } from '../../../classes/thread-subject';
 import { FilesService } from './files.service';
 import { Channel } from '../../../classes/channel';
+import { LinkState } from '../defs/peer-state.enum';
+import { ClientChangeType } from '../defs/client-change.enum';
 
 @Injectable({
   providedIn: 'root'
@@ -34,6 +36,7 @@ export class HubService {
   subs: Subscription[]
   peers: IPeer[] = []
   $threads: ThreadSubject<any> = new ThreadSubject()
+  $channels: Subject<Channel> = new Subject()
 
   constructor(
     private signaller: SignallerService,
@@ -114,6 +117,9 @@ export class HubService {
         }),
         link.onMessage.subscribe(msg => {
           this.onMessage(client.name, msg)
+        }),
+        link.onNewChannel.subscribe(c => {
+          this.$channels.next(c)
         })
       ]
       link.connect()
@@ -136,6 +142,9 @@ export class HubService {
       }),
       link.onMessage.subscribe(msg => {
         this.onMessage(e.payload.from, msg)
+      }),
+      link.onNewChannel.subscribe(c => {
+        this.$channels.next(c)
       })
     ]
     link.connect()
@@ -147,7 +156,7 @@ export class HubService {
 
   private onChangeLinkState(name: string, link: Link, state: PeerState) {
     this.peers.forEach(p => {
-      if (p.name === name) p.$status.next(this.computeStatus(name))
+      if (p.name === name) p.$change.next(this.computeStatus(name))
     })
   }
 
@@ -158,7 +167,8 @@ export class HubService {
             this.clients = reply.payload.clients
             .map(c => ({
               name: c,
-              $status: new Subject<Status>()
+              state: LinkState.Waiting,
+              $change: new Subject<Status>()
             }));
             this.peers = this.clients.filter(c => c.name !== this.auth.name)
             return Promise.resolve(this.clients)
@@ -167,23 +177,25 @@ export class HubService {
       )
   }
 
-  private computeStatus(linkName: string):Status {
+  private computeStatus(linkName: string):IClientChange {
     const link = this.links[linkName]
-    if (!link) return Status.Pending
-    if (link.online) return Status.Online
-    if (link.pending) return Status.Pending
-    if (link.failed) return Status.Offline
-    return Status.Offline
+    if (!link) return {type: ClientChangeType.Status, value: Status.Pending}
+    if (link.online) return {type: ClientChangeType.Status, value: Status.Online}
+    if (link.pending) return {type: ClientChangeType.Status, value: Status.Pending}
+    if (link.failed) return {type: ClientChangeType.Status, value: Status.Offline}
+    return {type: ClientChangeType.Status, value: Status.Offline}
   }
 
   private onClientConnected(e) {
     this.clients.push({
       name: e.payload.name,
-      $status: new Subject<Status>()
+      $change: new Subject<IClientChange>(),
+      state: LinkState.Waiting
     })
     this.peers = [{
       name: e.payload.name,
-      $status: new Subject<Status>()
+      state: LinkState.Waiting,
+      $change: new Subject<IClientChange>()
     }].concat(this.peers)
     this.fs.selected[e.payload.name] = []
   }

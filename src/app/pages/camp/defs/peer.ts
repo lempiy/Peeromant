@@ -1,5 +1,7 @@
 import { Status } from '../../../defs/status.enum'
 import { Subject } from 'rxjs'
+import { LinkState } from './peer-state.enum';
+import { ClientChangeType } from './client-change.enum';
 
 export interface IConfirmEvent {
     confirm: boolean
@@ -8,10 +10,22 @@ export interface IConfirmEvent {
 
 export interface IPeer {
     name: string
-    $status: Subject<Status>
+    $change: Subject<IClientChange>
+    state: LinkState
     pendingRequest?: ITransferRequest
-    transfering?: ITFile[]
+    transferProgress?: IProgress[]
 }
+
+export interface IClientChange {
+    type: ClientChangeType,
+    value: Status|LinkState
+}
+
+export interface IProgress {
+    max: number
+    value: number
+    name: string
+}  
 
 interface ITransferRequest {
     files: ITFile[]
@@ -19,8 +33,10 @@ interface ITransferRequest {
 }
 
 export interface ITFile {
+    from: string,
     name: string,
     size: number,
     channel: string,
-    progress?: number
+    progress?: number,
+    buffer?: ArrayBuffer[]
 }

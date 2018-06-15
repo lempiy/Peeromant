@@ -8,6 +8,7 @@ import { TransferService } from './services/transfer.service'
 
 import { switchMap } from 'rxjs/operators';
 import { IPeer, IConfirmEvent } from './defs/peer';
+import { LinkState } from './defs/peer-state.enum';
 
 @Component({
   selector: 'peer-camp',
@@ -32,14 +33,16 @@ export class CampComponent implements OnInit, OnDestroy {
             return this.hs.connect(!!q.initial, p.id)
           })
         ).subscribe(e => console.log(e), e => console.log(e)),
-        this.hs.subscribe(EVENT_CLIENT_REPLY_REQUEST, data => {
-          const peer = this.hs.peers.find(peer => peer.name == data.payload.from)
-          if (!peer) return
-          peer.pendingRequest = {
-            files: data.payload.files,
-            id: data.id
-          }
-        })
+      this.hs.subscribe(EVENT_CLIENT_REPLY_REQUEST, data => {
+        const peer = this.hs.peers.find(peer => peer.name == data.payload.from)
+        if (!peer) return
+        peer.pendingRequest = {
+          files: data.payload.files,
+          id: data.id
+        }
+        peer.state = LinkState.Pending
+      }),
+      this.ts.watchForTransfers()
     )
   }
   
@@ -55,11 +58,14 @@ export class CampComponent implements OnInit, OnDestroy {
         event.peer.pendingRequest.files
       ) :
       this.ts.rejectTransferRequest(event.peer.name, event.peer.pendingRequest.id))
-      .then(() => event.peer.pendingRequest = null)
   }
 
   transferFiles() {
     this.ts.transferFiles("Stepan", this.fs.files)
+      .subscribe(e => {
+        console.log("PROGRESS:", e)
+      },
+      err => console.log("ERROR:", err), () => console.log("COMPLETE!"))
     
   }
 }
