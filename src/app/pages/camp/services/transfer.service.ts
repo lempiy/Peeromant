@@ -8,7 +8,7 @@ import {
 import { IEvent } from '../../../defs/event';
 import { PayloadConfirm } from '../../../defs/payloads';
 import { Subscription, Observable, zip, of as obsOf, empty, from, merge, BehaviorSubject, throwError, combineLatest } from 'rxjs';
-import { switchMap, finalize, mergeScan } from 'rxjs/operators';
+import { switchMap, finalize, mergeScan, takeWhile, take } from 'rxjs/operators';
 import { ITFile, IProgress } from '../defs/peer';
 import { SignallerService } from '../../../services/signaller.service';
 import { Channel } from '../../../classes/channel';
@@ -26,6 +26,7 @@ export class TransferService {
 
   transferFiles(to: string, files: File[]):Observable<IProgress[]> {
     const peer = this.hs.peers.find(p => p.name === to)
+    console.log("find" ,this.hs.peers, to, peer)
     peer.pendingRequest = null
     peer.$change.next({type: ClientChangeType.State, value: LinkState.Transfering})
     return from(this.requestTransfer(to, files))
@@ -35,7 +36,8 @@ export class TransferService {
             return this.stream(to, files)
           }
           return throwError(reply.payload.info)
-        })
+        }),
+        finalize(() => console.log("FINALIZZE!"))
       )
   }
 
@@ -60,6 +62,7 @@ export class TransferService {
           if (accept.progress == accept.size) {
             const file = new File(accept.buffer, accept.name)
             accept.buffer = []
+            delete this.pendingAccepts[ch.label]
             console.log(`Done ${accept.name}`, file)
           }
         })
@@ -84,14 +87,11 @@ export class TransferService {
             return this.streamFile(c, file)
           }))
         }),
-        switchMap((pgs: IProgress[]) => {
-          if (pgs.every(p => p.max === p.value)) {
-            console.log('end')
-            return empty()
-          }
-          return obsOf(pgs)
-        }),
-        finalize(() => {console.log('FINALLIZEEEE!!!')})
+        takeWhile((pgs: IProgress[]) => !pgs.every(p => p.max === p.value)),
+        finalize(() => {
+          channels.forEach(c => c.die())
+          this.pendingTransfers = {}
+        })
       )
   }
 
