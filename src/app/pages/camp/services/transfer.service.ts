@@ -8,7 +8,7 @@ import {
 import { IEvent } from '../../../defs/event';
 import { PayloadConfirm } from '../../../defs/payloads';
 import { Subscription, Observable, zip, of as obsOf, empty, from, merge, BehaviorSubject, throwError, combineLatest } from 'rxjs';
-import { switchMap, finalize, mergeScan, takeWhile, take } from 'rxjs/operators';
+import { switchMap, finalize, flatMap, mergeScan, takeWhile, take } from 'rxjs/operators';
 import { ITFile, IProgress } from '../defs/peer';
 import { SignallerService } from '../../../services/signaller.service';
 import { Channel } from '../../../classes/channel';
@@ -27,12 +27,11 @@ export class TransferService {
   transferFiles(to: string, files: File[]):Observable<IProgress[]> {
     const peer = this.hs.peers.find(p => p.name === to)
     console.log("find" ,this.hs.peers, to, peer)
-    peer.pendingRequest = null
-    peer.$change.next({type: ClientChangeType.State, value: LinkState.Transfering})
     return from(this.requestTransfer(to, files))
       .pipe(
         switchMap(reply => {
           if (reply.payload.success) {
+            peer.$change.next({type: ClientChangeType.State, value: LinkState.Transfering})
             return this.stream(to, files)
           }
           return throwError(reply.payload.info)
@@ -41,35 +40,46 @@ export class TransferService {
       )
   }
 
-  watchForTransfers() {
-    return this.hs.$channels.subscribe(ch => {
-      const accept = this.pendingAccepts[ch.label]
-      const peer = this.hs.peers.find(p => p.name === accept.from)
-      peer.pendingRequest = null
-      peer.$change.next({type: ClientChangeType.State, value: LinkState.Transfering})
-      peer.transferProgress = peer.transferProgress || []
-      peer.transferProgress.push({
-        max: accept.size,
-        name: accept.name,
-        value: 0
-      })
-      if (accept) {
-        accept.buffer = []
-        accept.progress = 0
-        ch.onMessage.subscribe(chunk => {
-          accept.buffer.push(chunk)
-          accept.progress += (<ArrayBuffer>chunk).byteLength
-          if (accept.progress == accept.size) {
-            const file = new File(accept.buffer, accept.name)
-            accept.buffer = []
-            delete this.pendingAccepts[ch.label]
-            console.log(`Done ${accept.name}`, file)
-          }
+  watchForTransfers():Observable<IProgress|File> {
+    return this.hs.$channels.pipe(
+      flatMap(ch => {
+        const accept = this.pendingAccepts[ch.label]
+        const peer = this.hs.peers.find(p => p.name === accept.from)
+        peer.transferProgress = peer.transferProgress || []
+        peer.transferProgress.push({
+          max: accept.size,
+          name: accept.name,
+          value: 0
         })
-      } else {
-        ch.die()
-      }
-    })
+        peer.$change.next({type: ClientChangeType.State, value: LinkState.Transfering})
+        if (accept) {
+          accept.buffer = []
+          accept.progress = 0
+          return ch.onMessage.pipe(
+            switchMap(chunk => {
+                accept.buffer.push(chunk)
+                accept.progress += (<ArrayBuffer>chunk).byteLength
+                if (accept.progress == accept.size) {
+                  const file = new File(accept.buffer, accept.name)
+                  accept.buffer = []
+                  delete this.pendingAccepts[ch.label]
+                  console.log(`Done ${accept.name}`, file)
+                  return obsOf(file)
+                }
+                return obsOf({
+                  max: accept.size,
+                  name: accept.name,
+                  value: accept.progress
+                })
+              }
+            )
+          )
+        } else {
+          ch.die()
+          return empty()
+        }
+      })
+    )
   }
 
   private stream(to:string, files: File[]):Observable<IProgress[]> {

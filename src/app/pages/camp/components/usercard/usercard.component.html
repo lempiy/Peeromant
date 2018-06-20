@@ -38,6 +38,18 @@
                 </clr-dg-placeholder>
                 <clr-dg-footer>{{client.pendingRequest.length}} files</clr-dg-footer>
             </clr-datagrid>
+            <clr-datagrid *ngSwitchCase="LinkState.Transfering">
+                <clr-dg-column>File Name</clr-dg-column>
+                <clr-dg-column>Size</clr-dg-column>
+                <clr-dg-row *ngFor="let file of client.transferProgress">
+                    <clr-dg-cell>{{file.name}}</clr-dg-cell>
+                    <clr-dg-cell>{{file.max}}/{{file.value}}</clr-dg-cell>
+                </clr-dg-row>
+                <clr-dg-placeholder>
+                Some error occured...
+                </clr-dg-placeholder>
+                <clr-dg-footer>{{client.transferProgress.length}} files</clr-dg-footer>
+            </clr-datagrid>
         </div>
     </div>
     <div class="card-footer" *ngIf="!client.pendingRequest; else selectConfirm;">

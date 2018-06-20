@@ -42,7 +42,9 @@ export class CampComponent implements OnInit, OnDestroy {
         }
         peer.state = LinkState.Pending
       }),
-      this.ts.watchForTransfers()
+      this.ts.watchForTransfers().subscribe(e => {
+        console.log("RECIEVE: ", e)
+      }, e => console.log(e), () => console.log("RECIEVE COMPELETE!"))
     )
   }
   
@@ -61,11 +63,16 @@ export class CampComponent implements OnInit, OnDestroy {
   }
 
   transferFiles() {
+    const peer:IPeer = this.hs.peers.find(p => p.name === "Stepan")
+    peer.transferProgress = this.fs.files.map(f => ({name: f.name, value: 0, max: f.size}))
     this.ts.transferFiles("Stepan", this.fs.files)
       .subscribe(e => {
-        console.log("PROGRESS:", e)
+        peer.transferProgress = e
       },
-      err => console.log("ERROR:", err), () => console.log("COMPLETE!"))
+      err => {
+      }, () => {
+        console.log("COMPLETE!")
+      })
     
   }
 }
