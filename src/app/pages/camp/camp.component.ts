@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { FilesService } from './services/files.service';
 import { HubService } from './services/hub.service';
 import { ActivatedRoute } from '@angular/router';
@@ -21,7 +21,8 @@ export class CampComponent implements OnInit, OnDestroy {
     public fs: FilesService,
     public hs: HubService,
     private ts: TransferService,
-    private r: ActivatedRoute) { }
+    private r: ActivatedRoute,
+    private zone: NgZone) { }
 
   ngOnInit() {
     this.subs = []
@@ -43,6 +44,15 @@ export class CampComponent implements OnInit, OnDestroy {
         peer.state = LinkState.Pending
       }),
       this.ts.watchForTransfers().subscribe(e => {
+        if (e instanceof File) {
+
+        } else {
+          const peer = this.hs.peers.find(peer => peer.name == e.target)
+          const p = peer.transferProgress.find(f => f.name === e.name)
+          this.zone.run(() => {
+            p.value = e.value
+          })
+        }
         console.log("RECIEVE: ", e)
       }, e => console.log(e), () => console.log("RECIEVE COMPELETE!"))
     )
@@ -64,7 +74,7 @@ export class CampComponent implements OnInit, OnDestroy {
 
   transferFiles() {
     const peer:IPeer = this.hs.peers.find(p => p.name === "Stepan")
-    peer.transferProgress = this.fs.files.map(f => ({name: f.name, value: 0, max: f.size}))
+    peer.transferProgress = this.fs.files.map(f => ({name: f.name, value: 0, max: f.size, target: 'Stepan'}))
     this.ts.transferFiles("Stepan", this.fs.files)
       .subscribe(e => {
         peer.transferProgress = e

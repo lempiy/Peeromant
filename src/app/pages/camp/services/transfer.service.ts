@@ -45,11 +45,12 @@ export class TransferService {
       flatMap(ch => {
         const accept = this.pendingAccepts[ch.label]
         const peer = this.hs.peers.find(p => p.name === accept.from)
-        peer.transferProgress = peer.transferProgress || []
+        peer.transferProgress = []
         peer.transferProgress.push({
           max: accept.size,
           name: accept.name,
-          value: 0
+          value: 0,
+          target: peer.name
         })
         peer.$change.next({type: ClientChangeType.State, value: LinkState.Transfering})
         if (accept) {
@@ -69,7 +70,8 @@ export class TransferService {
                 return obsOf({
                   max: accept.size,
                   name: accept.name,
-                  value: accept.progress
+                  value: accept.progress,
+                  target: peer.name
                 })
               }
             )
@@ -94,7 +96,7 @@ export class TransferService {
           return combineLatest(...channels.map(c => {
             const file = files.find(f => this.pendingTransfers[c.label].name == f.name)
             console.log(`stream file ${file.name}...`)
-            return this.streamFile(c, file)
+            return this.streamFile(c, file, to)
           }))
         }),
         takeWhile((pgs: IProgress[]) => !pgs.every(p => p.max === p.value)),
@@ -105,11 +107,12 @@ export class TransferService {
       )
   }
 
-  private streamFile(channel: Channel, file: File):Observable<IProgress> {
+  private streamFile(channel: Channel, file: File, to: string):Observable<IProgress> {
     const sendProgress = {
       max: file.size,
       value: 0,
-      name: file.name
+      name: file.name,
+      target: to
     }
     const progress = new BehaviorSubject(sendProgress);
     const sliceFile = offset => {

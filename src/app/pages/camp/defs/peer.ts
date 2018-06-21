@@ -25,6 +25,7 @@ export interface IProgress {
     max: number
     value: number
     name: string
+    target: string
 }  
 
 interface ITransferRequest {
