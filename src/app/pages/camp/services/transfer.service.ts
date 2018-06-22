@@ -9,7 +9,7 @@ import { IEvent } from '../../../defs/event';
 import { PayloadConfirm } from '../../../defs/payloads';
 import { Subscription, Observable, zip, of as obsOf, empty, from, merge, BehaviorSubject, throwError, combineLatest } from 'rxjs';
 import { switchMap, finalize, flatMap, mergeScan, takeWhile, take } from 'rxjs/operators';
-import { ITFile, IProgress } from '../defs/peer';
+import { ITFile, IProgress, IResult } from '../defs/peer';
 import { SignallerService } from '../../../services/signaller.service';
 import { Channel } from '../../../classes/channel';
 import { LinkState } from '../defs/peer-state.enum';
@@ -40,7 +40,7 @@ export class TransferService {
       )
   }
 
-  watchForTransfers():Observable<IProgress|File> {
+  watchForTransfers():Observable<IProgress|IResult> {
     return this.hs.$channels.pipe(
       flatMap(ch => {
         const accept = this.pendingAccepts[ch.label]
@@ -65,7 +65,7 @@ export class TransferService {
                   accept.buffer = []
                   delete this.pendingAccepts[ch.label]
                   console.log(`Done ${accept.name}`, file)
-                  return obsOf(file)
+                  return obsOf({target: peer.name, value: file})
                 }
                 return obsOf({
                   max: accept.size,

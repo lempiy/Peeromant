@@ -26,7 +26,12 @@ export interface IProgress {
     value: number
     name: string
     target: string
-}  
+} 
+
+export interface IResult {
+    value: File
+    target: string
+}
 
 interface ITransferRequest {
     files: ITFile[]

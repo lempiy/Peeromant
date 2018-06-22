@@ -7,7 +7,7 @@ import { EVENT_CLIENT_REPLY_REQUEST } from '../../defs/constants';
 import { TransferService } from './services/transfer.service'
 
 import { switchMap } from 'rxjs/operators';
-import { IPeer, IConfirmEvent } from './defs/peer';
+import { IPeer, IConfirmEvent, IProgress, IResult } from './defs/peer';
 import { LinkState } from './defs/peer-state.enum';
 
 @Component({
@@ -44,13 +44,19 @@ export class CampComponent implements OnInit, OnDestroy {
         peer.state = LinkState.Pending
       }),
       this.ts.watchForTransfers().subscribe(e => {
-        if (e instanceof File) {
-
-        } else {
-          const peer = this.hs.peers.find(peer => peer.name == e.target)
-          const p = peer.transferProgress.find(f => f.name === e.name)
+        if (e.value instanceof File) {
+          const event = <IResult>e
+          const peer = this.hs.peers.find(peer => peer.name == event.target)
+          const p = peer.transferProgress.find(f => f.name === event.value.name)
           this.zone.run(() => {
-            p.value = e.value
+            p.value = event.value.size
+          })
+        } else {
+          const event = <IProgress>e
+          const peer = this.hs.peers.find(peer => peer.name == event.target)
+          const p = peer.transferProgress.find(f => f.name === event.name)
+          this.zone.run(() => {
+            p.value = event.value
           })
         }
         console.log("RECIEVE: ", e)
