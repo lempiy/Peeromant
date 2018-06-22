@@ -45,7 +45,7 @@ export class TransferService {
       flatMap(ch => {
         const accept = this.pendingAccepts[ch.label]
         const peer = this.hs.peers.find(p => p.name === accept.from)
-        peer.transferProgress = []
+        peer.transferProgress = peer.transferProgress || []
         peer.transferProgress.push({
           max: accept.size,
           name: accept.name,

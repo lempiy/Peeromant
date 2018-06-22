@@ -43,7 +43,9 @@
                 <clr-dg-column>Size</clr-dg-column>
                 <clr-dg-row *ngFor="let file of client.transferProgress">
                     <clr-dg-cell>{{file.name}}</clr-dg-cell>
-                    <clr-dg-cell>{{file.max}}/{{file.value}}</clr-dg-cell>
+                    <clr-dg-cell>
+                        <progress [max]="file.max" [value]="file.value" data-displayval="0%"></progress>
+                    </clr-dg-cell>
                 </clr-dg-row>
                 <clr-dg-placeholder>
                 Some error occured...
@@ -52,7 +54,7 @@
             </clr-datagrid>
         </div>
     </div>
-    <div class="card-footer" *ngIf="!client.pendingRequest; else selectConfirm;">
+    <div class="card-footer" *ngIf="client.state != LinkState.Pending; else selectConfirm;">
         <button class="btn btn-sm btn-out">Transfer</button>
     </div>
     <ng-template #selectConfirm>
