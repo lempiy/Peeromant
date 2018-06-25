@@ -7,6 +7,7 @@ import { TransferService } from '../../services/transfer.service';
 import { Subscription } from 'rxjs';
 import { LinkState } from '../../defs/peer-state.enum';
 import { ClientChangeType } from '../../defs/client-change.enum';
+import { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
   selector: 'peer-usercard',
@@ -26,7 +27,8 @@ export class UsercardComponent implements OnInit, OnDestroy {
   constructor(
     public fs: FilesService,
     private zone: NgZone,
-    private ts: TransferService) {}
+    private ts: TransferService,
+    private sanitizer:DomSanitizer) {}
 
   ngOnInit() {
     this.sub = this.client.$change.subscribe(
@@ -41,6 +43,10 @@ export class UsercardComponent implements OnInit, OnDestroy {
         }
       }
     )
+  }
+
+  sanitize(url:string) {
+    return this.sanitizer.bypassSecurityTrustUrl(url);
   }
 
   onConfirmTransfer() {

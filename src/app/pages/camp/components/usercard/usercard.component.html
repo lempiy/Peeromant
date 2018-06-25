@@ -41,10 +41,14 @@
             <clr-datagrid *ngSwitchCase="LinkState.Transfering">
                 <clr-dg-column>File Name</clr-dg-column>
                 <clr-dg-column>Size</clr-dg-column>
+                <clr-dg-column>Download</clr-dg-column>
                 <clr-dg-row *ngFor="let file of client.transferProgress">
                     <clr-dg-cell>{{file.name}}</clr-dg-cell>
                     <clr-dg-cell>
                         <progress [max]="file.max" [value]="file.value" data-displayval="0%"></progress>
+                    </clr-dg-cell>
+                    <clr-dg-cell *ngIf="file.result">
+                        <a [href]="sanitize(file.result)" [download]="file.name">Link</a>
                     </clr-dg-cell>
                 </clr-dg-row>
                 <clr-dg-placeholder>

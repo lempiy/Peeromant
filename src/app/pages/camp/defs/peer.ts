@@ -26,6 +26,7 @@ export interface IProgress {
     value: number
     name: string
     target: string
+    result?: string
 } 
 
 export interface IResult {

@@ -48,8 +48,10 @@ export class CampComponent implements OnInit, OnDestroy {
           const event = <IResult>e
           const peer = this.hs.peers.find(peer => peer.name == event.target)
           const p = peer.transferProgress.find(f => f.name === event.value.name)
+          const url = URL.createObjectURL(event.value)
           this.zone.run(() => {
             p.value = event.value.size
+            p.result = url
           })
         } else {
           const event = <IProgress>e
