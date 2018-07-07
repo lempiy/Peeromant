@@ -15,7 +15,7 @@
             </div>
         </div>
         <div class="card-text text-center" [ngSwitch]="client.state">
-            <clr-datagrid *ngSwitchCase="LinkState.Waiting"[(clrDgSelected)]="fs.selected[client.name]" [clDgRowSelection]="true">
+            <clr-datagrid *ngSwitchCase="LinkState.Waiting" [(clrDgSelected)]="fs.selected[client.name]" [clDgRowSelection]="true">
                 <clr-dg-column>File Name</clr-dg-column>
                 <clr-dg-column>Size</clr-dg-column>
                 <clr-dg-row *clrDgItems="let file of fs.files" [clrDgItem]="file">
@@ -41,14 +41,14 @@
             <clr-datagrid *ngSwitchCase="LinkState.Transfering">
                 <clr-dg-column>File Name</clr-dg-column>
                 <clr-dg-column>Size</clr-dg-column>
-                <clr-dg-column>Download</clr-dg-column>
+                <clr-dg-column *ngIf="role === ClientRoles.Reciever">Download</clr-dg-column>
                 <clr-dg-row *ngFor="let file of client.transferProgress">
                     <clr-dg-cell>{{file.name}}</clr-dg-cell>
                     <clr-dg-cell>
                         <progress [max]="file.max" [value]="file.value" data-displayval="0%"></progress>
                     </clr-dg-cell>
-                    <clr-dg-cell *ngIf="file.result">
-                        <a [href]="sanitize(file.result)" [download]="file.name">Link</a>
+                    <clr-dg-cell *ngIf="role === ClientRoles.Reciever">
+                        <a *ngIf="file.result" [href]="sanitize(file.result)" [download]="file.name">Link</a>
                     </clr-dg-cell>
                 </clr-dg-row>
                 <clr-dg-placeholder>
@@ -58,13 +58,16 @@
             </clr-datagrid>
         </div>
     </div>
-    <div class="card-footer" *ngIf="client.state != LinkState.Pending; else selectConfirm;">
-        <button class="btn btn-sm btn-out">Transfer</button>
-    </div>
-    <ng-template #selectConfirm>
-        <div class="card-footer">
+    <div [ngSwitch]="client.state">
+        <div class="card-footer" *ngSwitchCase="LinkState.Waiting">
+            <button class="btn btn-sm btn-out">Transfer</button>
+        </div>
+        <div class="card-footer" *ngSwitchCase="LinkState.Pending">
             <button class="btn btn-sm btn-main" (click)="onConfirmTransfer()">Accept</button>
             <button class="btn btn-sm btn-out" (click)="onRejectTransfer()">Reject</button>
         </div>
-    </ng-template>
+        <div class="card-footer" *ngSwitchCase="LinkState.Transfering">
+            <button class="btn btn-sm btn-main" (click)="resetState()">Reset</button>
+        </div>
+    </div>
 </div>

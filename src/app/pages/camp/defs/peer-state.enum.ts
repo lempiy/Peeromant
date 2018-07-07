@@ -3,3 +3,8 @@ export enum LinkState {
     Pending = 'pending',
     Transfering = 'transfering'
 }
+
+export enum ClientRoles {
+    Initiator = 'initiator',
+    Reciever = 'reciever'
+}

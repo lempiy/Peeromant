@@ -5,7 +5,7 @@ import { IPeer, IConfirmEvent } from '../../defs/peer'
 import { Status } from '../../../../defs/status.enum';
 import { TransferService } from '../../services/transfer.service';
 import { Subscription } from 'rxjs';
-import { LinkState } from '../../defs/peer-state.enum';
+import { LinkState, ClientRoles } from '../../defs/peer-state.enum';
 import { ClientChangeType } from '../../defs/client-change.enum';
 import { DomSanitizer } from '@angular/platform-browser';
 
@@ -22,6 +22,8 @@ export class UsercardComponent implements OnInit, OnDestroy {
   private sub: Subscription
   status: Status = Status.Pending
   public LinkState = LinkState
+  public role: ClientRoles
+  public ClientRoles = ClientRoles
 
   selected:any[] = []
   constructor(
@@ -38,7 +40,10 @@ export class UsercardComponent implements OnInit, OnDestroy {
             this.zone.run(() => this.status = <Status>e.value)
             break
           case ClientChangeType.State:
-            this.zone.run(() => this.client.state = <LinkState>e.value)
+            this.zone.run(() => {
+              this.client.state = <LinkState>e.value
+              this.role = e.role || null
+            })
             break
         }
       }
@@ -54,6 +59,10 @@ export class UsercardComponent implements OnInit, OnDestroy {
       confirm: true,
       peer: this.client
     })
+  }
+
+  resetState() {
+    this.ts.resetState(this.client)
   }
 
   onRejectTransfer() {

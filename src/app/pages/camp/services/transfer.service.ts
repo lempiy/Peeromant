@@ -9,10 +9,10 @@ import { IEvent } from '../../../defs/event';
 import { PayloadConfirm } from '../../../defs/payloads';
 import { Subscription, Observable, zip, of as obsOf, empty, from, merge, BehaviorSubject, throwError, combineLatest } from 'rxjs';
 import { switchMap, finalize, flatMap, mergeScan, takeWhile, take } from 'rxjs/operators';
-import { ITFile, IProgress, IResult } from '../defs/peer';
+import { ITFile, IProgress, IResult, IPeer } from '../defs/peer';
 import { SignallerService } from '../../../services/signaller.service';
 import { Channel } from '../../../classes/channel';
-import { LinkState } from '../defs/peer-state.enum';
+import { LinkState, ClientRoles } from '../defs/peer-state.enum';
 import { ClientChangeType } from '../defs/client-change.enum';
 
 @Injectable({
@@ -26,12 +26,11 @@ export class TransferService {
 
   transferFiles(to: string, files: File[]):Observable<IProgress[]> {
     const peer = this.hs.peers.find(p => p.name === to)
-    console.log("find" ,this.hs.peers, to, peer)
     return from(this.requestTransfer(to, files))
       .pipe(
         switchMap(reply => {
           if (reply.payload.success) {
-            peer.$change.next({type: ClientChangeType.State, value: LinkState.Transfering})
+            peer.$change.next({type: ClientChangeType.State, value: LinkState.Transfering, role: ClientRoles.Initiator})
             return this.stream(to, files)
           }
           return throwError(reply.payload.info)
@@ -52,7 +51,7 @@ export class TransferService {
           value: 0,
           target: peer.name
         })
-        peer.$change.next({type: ClientChangeType.State, value: LinkState.Transfering})
+        peer.$change.next({type: ClientChangeType.State, value: LinkState.Transfering, role: ClientRoles.Reciever})
         if (accept) {
           accept.buffer = []
           accept.progress = 0
@@ -154,6 +153,14 @@ export class TransferService {
         files: fls
       }
     )
+  }
+
+  resetState (peer: IPeer) {
+    this.pendingTransfers = {}
+    this.pendingAccepts = {}
+    peer.$change.next({type: ClientChangeType.State, value: LinkState.Waiting})
+    peer.transferProgress = []
+    peer.pendingRequest = null
   }
 
   confirmTransferRequest(to: string, id: string, files: ITFile[]):Promise<IEvent<any>> {
