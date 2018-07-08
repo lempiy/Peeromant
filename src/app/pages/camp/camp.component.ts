@@ -81,10 +81,9 @@ export class CampComponent implements OnInit, OnDestroy {
       this.ts.rejectTransferRequest(event.peer.name, event.peer.pendingRequest.id))
   }
 
-  transferFiles() {
-    const peer:IPeer = this.hs.peers.find(p => p.name === "Stepan")
+  transferFiles(peer: IPeer) {
     peer.transferProgress = this.fs.files.map(f => ({name: f.name, value: 0, max: f.size, target: 'Stepan'}))
-    this.ts.transferFiles("Stepan", this.fs.files)
+    this.ts.transferFiles(peer.name, this.fs.files)
       .subscribe(e => {
         peer.transferProgress = e
       },
@@ -92,6 +91,19 @@ export class CampComponent implements OnInit, OnDestroy {
       }, () => {
         console.log("COMPLETE!")
       })
-    
+  }
+
+  transferAllFiles() {
+    this.hs.peers.forEach(peer => {
+      peer.transferProgress = this.fs.files.map(f => ({name: f.name, value: 0, max: f.size, target: 'Stepan'}))
+      this.ts.transferFiles(peer.name, this.fs.files)
+        .subscribe(e => {
+          peer.transferProgress = e
+        },
+        err => {
+        }, () => {
+          console.log("COMPLETE!")
+        })
+    })
   }
 }

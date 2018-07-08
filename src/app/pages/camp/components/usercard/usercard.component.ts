@@ -17,6 +17,8 @@ import { DomSanitizer } from '@angular/platform-browser';
 export class UsercardComponent implements OnInit, OnDestroy {
   @Input()
   readonly client: IPeer
+  @Input()
+  readonly transferFiles: Function
   @Output()
   confirm: EventEmitter<IConfirmEvent> = new EventEmitter()
   private sub: Subscription
@@ -48,6 +50,10 @@ export class UsercardComponent implements OnInit, OnDestroy {
         }
       }
     )
+  }
+
+  transfer() {
+    return this.transferFiles(this.client)
   }
 
   sanitize(url:string) {

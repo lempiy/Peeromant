@@ -159,9 +159,11 @@ export class TransferService {
   resetAllState (peer: IPeer) {
     this.pendingTransfers = {}
     this.pendingAccepts = {}
-    peer.$change.next({type: ClientChangeType.State, value: LinkState.Waiting})
-    peer.transferProgress = []
-    peer.pendingRequest = null
+    this.hs.peers.forEach(p => {
+      p.$change.next({type: ClientChangeType.State, value: LinkState.Waiting})
+      p.transferProgress = []
+      p.pendingRequest = null
+    })
   }
 
   resetState (peer: IPeer) {

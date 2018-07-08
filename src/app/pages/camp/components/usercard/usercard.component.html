@@ -60,7 +60,7 @@
     </div>
     <div [ngSwitch]="client.state">
         <div class="card-footer" *ngSwitchCase="LinkState.Waiting">
-            <button class="btn btn-sm btn-out">Transfer</button>
+            <button class="btn btn-sm btn-out" (click)="transfer()">Transfer</button>
         </div>
         <div class="card-footer" *ngSwitchCase="LinkState.Pending">
             <button class="btn btn-sm btn-main" (click)="onConfirmTransfer()">Accept</button>
