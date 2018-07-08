@@ -61,6 +61,10 @@ export class UsercardComponent implements OnInit, OnDestroy {
     })
   }
 
+  resetAllState() {
+    this.ts.resetAllState(this.client)
+  }
+
   resetState() {
     this.ts.resetState(this.client)
   }

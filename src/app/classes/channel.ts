@@ -6,6 +6,7 @@ export class Channel {
     private channel: RTCDataChannel
     constructor(
         private conn: RTCPeerConnection,
+        public participant: string,
         public label: string,
         channel?:RTCDataChannel) {
         if (channel) {
