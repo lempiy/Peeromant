@@ -38,6 +38,12 @@ export class SignallerService {
   public hubs: string[] = []
   constructor(private auth: AuthService) {}
 
+  forceConnect():Observable<boolean> {
+    this.socket && this.socket.close()
+    this.socket = null
+    return this.ensureConnected()
+  }
+
   ensureConnected():Observable<boolean> {
     return this.getState().pipe(
       switchMap(state => {

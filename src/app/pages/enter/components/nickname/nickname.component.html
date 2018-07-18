@@ -1,14 +1,8 @@
-<section *ngIf="false" class="form-block nickname-set flex-center">
-  <input type="text" placeholder="Your nickname...">
-  <div>
-    <button class="btn btn-block btn-main">Apply</button>
-  </div>
-</section>
-<section *ngIf="true" class="form-block nickname-set flex-center">
+<section class="form-block nickname-set flex-center">
     <table>
       <tr>
         <td><b>Your are: </b></td>
-        <td><span>{{'lempiy'}}</span></td>
+        <td><span>{{auth.name}}</span></td>
       </tr>
       <tr>
         <td><b>Status: </b></td>

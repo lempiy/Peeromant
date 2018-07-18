@@ -7,6 +7,10 @@ const routes: Routes = [
     loadChildren: './pages/enter/enter.module#EnterModule'
   },
   {
+    path: 'auth',
+    loadChildren: './pages/auth/auth.module#AuthModule'
+  },
+  {
     path: 'camp/:id',
     loadChildren: './pages/camp/camp.module#CampModule'
   },
