@@ -55,7 +55,7 @@ export class Link {
     }
 
     getChannel(label: string):Channel {
-        return new Channel(this.connection, label)
+        return new Channel(this.connection, (this.isInitiator ? this.responder : this.initiator), label)
     }
 
     get online() {
@@ -183,7 +183,7 @@ export class Link {
     receiveChannelCallback(event) {
         if (event.channel.label != SEND_DATA_CHANNEL) {
             this.onNewChannel.next(
-                new Channel(this.connection, event.channel.label, event.channel)
+                new Channel(this.connection, (this.isInitiator ? this.responder : this.initiator), event.channel.label, event.channel)
             )
         } else {
             this.recieveChannel = event.channel

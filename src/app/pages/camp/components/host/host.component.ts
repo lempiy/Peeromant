@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { FilesService } from '../../services/files.service'
+import { FilesService } from '../../services/files.service';
+import { HubService } from '../../services/hub.service';
 import { Input } from '@angular/compiler/src/core';
+import { AuthService } from '../../../../services/auth.service'
 
 @Component({
   selector: 'peer-host',
@@ -8,11 +10,9 @@ import { Input } from '@angular/compiler/src/core';
   styleUrls: ['./host.component.sass']
 })
 export class HostComponent implements OnInit {
-  constructor(public fs: FilesService) { }
+  constructor(public fs: FilesService, public auth: AuthService, public hs: HubService) { }
 
-  ngOnInit() {
-    console.log(this.fs)
-  }
+  ngOnInit() {}
 
   onNewFile($event: Event) {
     const target = $event.target as HTMLInputElement

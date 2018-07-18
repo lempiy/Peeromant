@@ -9,10 +9,10 @@ import { IEvent } from '../../../defs/event';
 import { PayloadConfirm } from '../../../defs/payloads';
 import { Subscription, Observable, zip, of as obsOf, empty, from, merge, BehaviorSubject, throwError, combineLatest } from 'rxjs';
 import { switchMap, finalize, flatMap, mergeScan, takeWhile, take } from 'rxjs/operators';
-import { ITFile, IProgress, IResult } from '../defs/peer';
+import { ITFile, IProgress, IResult, IPeer } from '../defs/peer';
 import { SignallerService } from '../../../services/signaller.service';
 import { Channel } from '../../../classes/channel';
-import { LinkState } from '../defs/peer-state.enum';
+import { LinkState, ClientRoles } from '../defs/peer-state.enum';
 import { ClientChangeType } from '../defs/client-change.enum';
 
 @Injectable({
@@ -20,18 +20,17 @@ import { ClientChangeType } from '../defs/client-change.enum';
 })
 export class TransferService {
   private subs: Subscription[] = []
-  private pendingTransfers: {[key:string]: ITFile} = {}
-  private pendingAccepts: {[key:string]: ITFile} = {}
+  private pendingTransfers: {[key:string]: {[key:string]: ITFile}} = {}
+  private pendingAccepts: {[key:string]: {[key:string]: ITFile}} = {}
   constructor(private hs:HubService, private sgn:SignallerService) { }
 
   transferFiles(to: string, files: File[]):Observable<IProgress[]> {
     const peer = this.hs.peers.find(p => p.name === to)
-    console.log("find" ,this.hs.peers, to, peer)
     return from(this.requestTransfer(to, files))
       .pipe(
         switchMap(reply => {
           if (reply.payload.success) {
-            peer.$change.next({type: ClientChangeType.State, value: LinkState.Transfering})
+            peer.$change.next({type: ClientChangeType.State, value: LinkState.Transfering, role: ClientRoles.Initiator})
             return this.stream(to, files)
           }
           return throwError(reply.payload.info)
@@ -43,7 +42,7 @@ export class TransferService {
   watchForTransfers():Observable<IProgress|IResult> {
     return this.hs.$channels.pipe(
       flatMap(ch => {
-        const accept = this.pendingAccepts[ch.label]
+        const accept = this.pendingAccepts[ch.participant][ch.label]
         const peer = this.hs.peers.find(p => p.name === accept.from)
         peer.transferProgress = peer.transferProgress || []
         peer.transferProgress.push({
@@ -52,7 +51,7 @@ export class TransferService {
           value: 0,
           target: peer.name
         })
-        peer.$change.next({type: ClientChangeType.State, value: LinkState.Transfering})
+        peer.$change.next({type: ClientChangeType.State, value: LinkState.Transfering, role: ClientRoles.Reciever})
         if (accept) {
           accept.buffer = []
           accept.progress = 0
@@ -63,7 +62,7 @@ export class TransferService {
                 if (accept.progress == accept.size) {
                   const file = new File(accept.buffer, accept.name)
                   accept.buffer = []
-                  delete this.pendingAccepts[ch.label]
+                  delete this.pendingAccepts[ch.participant][ch.label]
                   console.log(`Done ${accept.name}`, file)
                   return obsOf({target: peer.name, value: file})
                 }
@@ -86,7 +85,7 @@ export class TransferService {
 
   private stream(to:string, files: File[]):Observable<IProgress[]> {
     console.log('streaming ...')
-    const channels = Object.entries(this.pendingTransfers).map(([key, value]) => {
+    const channels = Object.entries(this.pendingTransfers[to]).map(([key, value]) => {
       return this.hs.getChannel(to, key)
     })
     return this.launchChannels(channels)
@@ -94,7 +93,7 @@ export class TransferService {
         switchMap(() => {
           console.log("channels", channels)
           return combineLatest(...channels.map(c => {
-            const file = files.find(f => this.pendingTransfers[c.label].name == f.name)
+            const file = files.find(f => this.pendingTransfers[to][c.label].name == f.name)
             console.log(`stream file ${file.name}...`)
             return this.streamFile(c, file, to)
           }))
@@ -102,7 +101,7 @@ export class TransferService {
         takeWhile((pgs: IProgress[]) => !pgs.every(p => p.max === p.value)),
         finalize(() => {
           channels.forEach(c => c.die())
-          this.pendingTransfers = {}
+          this.pendingTransfers[to] = {}
         })
       )
   }
@@ -146,7 +145,8 @@ export class TransferService {
     const fls: ITFile[] = files.map(f => 
       ({from: this.hs.clientName, name: f.name, size: f.size, channel: this.sgn.generateID()})
     )
-    fls.forEach(f => this.pendingTransfers[f.channel] = f)
+    this.pendingTransfers[to] = {}
+    fls.forEach(f => this.pendingTransfers[to][f.channel] = f)
     return this.hs.signalWithReplyTo(EVENT_CLIENT_REPLY_REQUEST,
       to,
       {
@@ -156,8 +156,27 @@ export class TransferService {
     )
   }
 
+  resetAllState (peer: IPeer) {
+    this.pendingTransfers = {}
+    this.pendingAccepts = {}
+    this.hs.peers.forEach(p => {
+      p.$change.next({type: ClientChangeType.State, value: LinkState.Waiting})
+      p.transferProgress = []
+      p.pendingRequest = null
+    })
+  }
+
+  resetState (peer: IPeer) {
+    this.pendingTransfers[peer.name] = null
+    this.pendingAccepts[peer.name] = null
+    peer.$change.next({type: ClientChangeType.State, value: LinkState.Waiting})
+    peer.transferProgress = []
+    peer.pendingRequest = null
+  }
+
   confirmTransferRequest(to: string, id: string, files: ITFile[]):Promise<IEvent<any>> {
-    files.forEach(f => this.pendingAccepts[f.channel] = f)
+    this.pendingAccepts[to] = {}
+    files.forEach(f => this.pendingAccepts[to][f.channel] = f)
     return this.hs.signalWithReplyTo(EVENT_CLIENT_REPLY_RESPONSE, to, {
       success: true
     }, id)

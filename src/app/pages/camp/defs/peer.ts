@@ -1,6 +1,6 @@
 import { Status } from '../../../defs/status.enum'
 import { Subject } from 'rxjs'
-import { LinkState } from './peer-state.enum';
+import { LinkState, ClientRoles } from './peer-state.enum';
 import { ClientChangeType } from './client-change.enum';
 
 export interface IConfirmEvent {
@@ -18,7 +18,8 @@ export interface IPeer {
 
 export interface IClientChange {
     type: ClientChangeType,
-    value: Status|LinkState
+    value: Status|LinkState,
+    role?: ClientRoles
 }
 
 export interface IProgress {

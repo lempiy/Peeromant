@@ -1,14 +1,15 @@
-import { Component, OnInit, OnDestroy, NgZone } from '@angular/core';
-import { FilesService } from './services/files.service';
-import { HubService } from './services/hub.service';
-import { ActivatedRoute } from '@angular/router';
-import { zip, Subscription } from 'rxjs';
-import { EVENT_CLIENT_REPLY_REQUEST } from '../../defs/constants';
+import { Component, OnInit, OnDestroy, NgZone } from '@angular/core'
+import { FilesService } from './services/files.service'
+import { HubService } from './services/hub.service'
+import { ActivatedRoute } from '@angular/router'
+import { zip, Subscription } from 'rxjs'
+import { EVENT_CLIENT_REPLY_REQUEST } from '../../defs/constants'
 import { TransferService } from './services/transfer.service'
 
-import { switchMap } from 'rxjs/operators';
-import { IPeer, IConfirmEvent, IProgress, IResult } from './defs/peer';
-import { LinkState } from './defs/peer-state.enum';
+import { switchMap } from 'rxjs/operators'
+import { IPeer, IConfirmEvent, IProgress, IResult, } from './defs/peer'
+import { LinkState, ClientRoles } from './defs/peer-state.enum'
+import { ClientChangeType } from './defs/client-change.enum'
 
 @Component({
   selector: 'peer-camp',
@@ -41,7 +42,7 @@ export class CampComponent implements OnInit, OnDestroy {
           files: data.payload.files,
           id: data.id
         }
-        peer.state = LinkState.Pending
+        peer.$change.next({type: ClientChangeType.State, value: LinkState.Pending, role: ClientRoles.Initiator})
       }),
       this.ts.watchForTransfers().subscribe(e => {
         if (e.value instanceof File) {
@@ -80,10 +81,9 @@ export class CampComponent implements OnInit, OnDestroy {
       this.ts.rejectTransferRequest(event.peer.name, event.peer.pendingRequest.id))
   }
 
-  transferFiles() {
-    const peer:IPeer = this.hs.peers.find(p => p.name === "Stepan")
+  transferFiles(peer: IPeer) {
     peer.transferProgress = this.fs.files.map(f => ({name: f.name, value: 0, max: f.size, target: 'Stepan'}))
-    this.ts.transferFiles("Stepan", this.fs.files)
+    this.ts.transferFiles(peer.name, this.fs.files)
       .subscribe(e => {
         peer.transferProgress = e
       },
@@ -91,6 +91,19 @@ export class CampComponent implements OnInit, OnDestroy {
       }, () => {
         console.log("COMPLETE!")
       })
-    
+  }
+
+  transferAllFiles() {
+    this.hs.peers.forEach(peer => {
+      peer.transferProgress = this.fs.files.map(f => ({name: f.name, value: 0, max: f.size, target: 'Stepan'}))
+      this.ts.transferFiles(peer.name, this.fs.files)
+        .subscribe(e => {
+          peer.transferProgress = e
+        },
+        err => {
+        }, () => {
+          console.log("COMPLETE!")
+        })
+    })
   }
 }
