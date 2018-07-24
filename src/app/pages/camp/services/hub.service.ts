@@ -15,7 +15,7 @@ import { Link } from '../../../classes/link'
 import { SignallerService } from '../../../services/signaller.service'
 import { AuthService } from '../../../services/auth.service'
 import { IEvent } from '../../../defs/event';
-import { Subscription, Observable, from, Subject, PartialObserver } from 'rxjs';
+import { Subscription, Observable, from, Subject, PartialObserver, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators'
 import { PeerState } from '../../../defs/peer-state.enum';
 import { ThreadSubject } from '../../../classes/thread-subject';
@@ -45,21 +45,21 @@ export class HubService {
 
   }
 
-  connect(initial:boolean, name:string):Observable<true|void> {
+  connect(initial:boolean, name:string):Observable<boolean> {
     this.initial = initial
     this.name = name
     return this.signaller
       .ensureConnected()
       .pipe(
-        switchMap(() => {
-          return from(
+        switchMap(ok => {
+          return ok ? from(
             this._initialConnect()
               .then(() => {
                 this.subscribeToEvents()
                 return this.refreshClientsList()
               })
               .then(() => this.initial || this.createLinks())
-            )
+            ) : of(false)
         })
       )
   }

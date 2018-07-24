@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { EVENT_HUB_REMOVED, EVENT_NEW_HUB_CREATED } from '../../defs/constants'
 import { SignallerService } from '../../services/signaller.service'
 import { switchMap } from 'rxjs/operators';
-import { Subscription } from 'rxjs'
+import { Subscription, empty } from 'rxjs'
 
 @Component({
   selector: 'peer-enter',
@@ -21,11 +21,21 @@ export class EnterComponent implements OnInit, OnDestroy {
     this.subs.push(
       this.sgn
         .ensureConnected()
-        .pipe(switchMap(() => this.sgn.getAvailableHubs()))
+        .pipe(switchMap(isOk => {
+          if (isOk) {
+            return this.sgn.getAvailableHubs()
+          }
+          this.navigateToAuth()
+          return empty()
+        }))
         .subscribe(e => {
           console.log(e.payload.hubs)
         }, e => console.log("error: ", e))
     )
+  }
+
+  navigateToAuth() {
+    return this.r.navigate(['/auth'])
   }
 
   initSubscriptions() {

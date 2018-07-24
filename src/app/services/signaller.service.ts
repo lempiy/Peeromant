@@ -20,7 +20,7 @@ import {
   of as obsOf, 
   throwError 
 } from 'rxjs'
-import { shareReplay, filter, map, switchMap } from 'rxjs/operators'
+import { shareReplay, filter, map, switchMap, delay } from 'rxjs/operators'
 import { IEvent } from '../defs/event'
 import { PayloadHubs, PayloadConfirm } from '../defs/payloads'
 import { ThreadSubject } from '../classes/thread-subject'
@@ -35,6 +35,7 @@ export class SignallerService {
   private _subject: ThreadSubject<IEvent<any>> = new ThreadSubject()
   private $onOpen: Observable<Event>
   private $onError: Observable<Event>
+  private $onClose: Observable<Event>
   public hubs: string[] = []
   constructor(private auth: AuthService) {}
 
@@ -58,17 +59,23 @@ export class SignallerService {
             }
             console.log('connecting to signaller...')
             this.$onOpen = fromEvent(this.socket, 'open').pipe(
+              delay(100),
               shareReplay(1)
             )
             this.$onError = fromEvent(this.socket, 'error').pipe(
               filter(e => (<WebSocket>e.target).readyState === WebSocket.CLOSED),
               shareReplay(1)
             )
+            this.$onClose = fromEvent(this.socket, 'close').pipe(
+              filter(e => (<WebSocket>e.target).readyState === WebSocket.CLOSED),
+              shareReplay(1)
+            )
         }
-        return race(this.$onOpen, this.$onError)
+        return race(this.$onOpen, this.$onError, this.$onClose)
       }),
       switchMap((event:Event) => {
         if (event.type === 'error') return throwError('Error on connection to signaller')
+        if (event.type === 'close') return obsOf(false)
         return obsOf(true)
       })
     )

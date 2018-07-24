@@ -5,6 +5,19 @@
             Enter your nickname:
         </div>
         <div class="card-block">
+            <div class="alert alert-danger alert-sm" *ngIf="error">
+                <button type="button" class="close" aria-label="Close" (click)="error = ''">
+                    <clr-icon shape="close"></clr-icon>
+                </button>
+                <div class="alert-item static">
+                        <div class="alert-icon-wrapper">
+                            <clr-icon class="alert-icon" shape="exclamation-triangle"></clr-icon>
+                        </div>
+                    <span class="alert-text">
+                        {{error}}
+                    </span>
+                </div>
+            </div>
             <div class="card-text">
                 <div class="center-spacing">
                   <input type="text" [value]="name" (input)="onInput($event)" id="name" placeholder="Nickname" size="45">

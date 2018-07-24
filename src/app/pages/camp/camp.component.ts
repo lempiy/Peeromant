@@ -1,8 +1,9 @@
 import { Component, OnInit, OnDestroy, NgZone } from '@angular/core'
 import { FilesService } from './services/files.service'
+import { Router } from '@angular/router'
 import { HubService } from './services/hub.service'
 import { ActivatedRoute } from '@angular/router'
-import { zip, Subscription } from 'rxjs'
+import { zip, Subscription, from } from 'rxjs'
 import { EVENT_CLIENT_REPLY_REQUEST } from '../../defs/constants'
 import { TransferService } from './services/transfer.service'
 
@@ -10,6 +11,7 @@ import { switchMap } from 'rxjs/operators'
 import { IPeer, IConfirmEvent, IProgress, IResult, } from './defs/peer'
 import { LinkState, ClientRoles } from './defs/peer-state.enum'
 import { ClientChangeType } from './defs/client-change.enum'
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'peer-camp',
@@ -23,18 +25,27 @@ export class CampComponent implements OnInit, OnDestroy {
     public hs: HubService,
     private ts: TransferService,
     private r: ActivatedRoute,
+    private auth: AuthService,
+    private router: Router,
     private zone: NgZone) { }
 
   ngOnInit() {
     this.subs = []
     this.fs.setPeers(this.hs.clients.map(c => c.name))
     this.subs.push(
+      // Connect to Signaller and create links between peers
       zip(this.r.params, this.r.queryParams)
         .pipe(
           switchMap(([p, q]) => {
+            if (!this.auth.name) return from(this.navigateToAuth(!!q.initial, p.id))
             return this.hs.connect(!!q.initial, p.id)
-          })
-        ).subscribe(e => console.log(e), e => console.log(e)),
+          }),
+        ).subscribe(ok => {
+          if (!ok) {
+            this.navigateToAuth(this.hs.initial, this.hs.name)
+          }
+        }, e => console.log(e)),
+      // Subscribe to file transfer confirm/reject events
       this.hs.subscribe(EVENT_CLIENT_REPLY_REQUEST, data => {
         const peer = this.hs.peers.find(peer => peer.name == data.payload.from)
         if (!peer) return
@@ -44,6 +55,7 @@ export class CampComponent implements OnInit, OnDestroy {
         }
         peer.$change.next({type: ClientChangeType.State, value: LinkState.Pending, role: ClientRoles.Initiator})
       }),
+      // Subscribe to file transfers
       this.ts.watchForTransfers().subscribe(e => {
         if (e.value instanceof File) {
           const event = <IResult>e
@@ -69,6 +81,16 @@ export class CampComponent implements OnInit, OnDestroy {
   
   ngOnDestroy() {
     this.subs.forEach(s => s.unsubscribe())
+  }
+
+  navigateToAuth(initial: boolean, hub: string):Promise<boolean> {
+    const route = `/camp/${hub}` 
+    return this.router.navigate(['/auth'], {
+      queryParams: {
+        next: route,
+        initial: !!initial
+      },
+    })
   }
 
   replyOnRequest(event: IConfirmEvent) {

@@ -13,6 +13,8 @@ export class AuthComponent implements OnInit, OnDestroy {
   name: string
   private subs: Subscription[] = []
   private next: string
+  private isInitial: boolean
+  public error: string
   constructor(
     public auth: AuthService,
     private route: ActivatedRoute,
@@ -23,6 +25,7 @@ export class AuthComponent implements OnInit, OnDestroy {
     this.name = this.auth.name
     this.subs.push(this.route.queryParams.subscribe(p => {
       this.next = p.next
+      this.isInitial = p.initial
     }))
   }
 
@@ -31,6 +34,7 @@ export class AuthComponent implements OnInit, OnDestroy {
   }
 
   onInput(event: Event) {
+    this.error = ''
     this.name = (<HTMLInputElement>event.target).value
   }
 
@@ -41,11 +45,17 @@ export class AuthComponent implements OnInit, OnDestroy {
     this.sg.forceConnect().subscribe(
       isOk => {
         if (isOk) {
-          this.router.navigate([this.next || '/enter'])
+          this.router.navigate([this.next || '/enter'], this.isInitial ? {
+            queryParams: {
+              initial: 1
+            }
+          } : null)
+          return
         }
+        this.error = `User with name ${this.name} already connected`
       },
       err => {
-        console.log('error', err)
+        this.error = `Cannot connect to signal server`
       },
       function() {
         this.unsubscribe()
