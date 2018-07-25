@@ -4,7 +4,7 @@
 
 #### About
 
-Peeromant is peer-to-peer browser base file transfer system built on top of
+Peeromant is peer-to-peer browser-based file transfer system built on top of
 [WebRTC](https://webrtc.org/) . Project is on development stage, currently provides following
 possibilities/features. 
 
@@ -23,7 +23,7 @@ Preview:
 
 
 ***No-server remark:*** In order to recognize connection addressee WebRTC apps are using
-[STUN/TURN and signalling servers](http://html5rocks.com/en/tutorials/webrtc/infrastructure/). So they are **not** fully client-side apps. Its important  
+[STUN/TURN and signalling servers](http://html5rocks.com/en/tutorials/webrtc/infrastructure/). So they are **not** fully client-side apps. Its important 
 to understand that transferred data (user files) will never be uploaded to mentioned servers.
 
 
