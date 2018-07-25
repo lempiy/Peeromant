@@ -37,10 +37,12 @@ export class CampComponent implements OnInit, OnDestroy {
       zip(this.r.params, this.r.queryParams)
         .pipe(
           switchMap(([p, q]) => {
+            console.log('!this.auth.name', this.auth.name)
             if (!this.auth.name) return from(this.navigateToAuth(!!q.initial, p.id))
             return this.hs.connect(!!q.initial, p.id)
           }),
         ).subscribe(ok => {
+          console.log('init is ok', ok)
           if (!ok) {
             this.navigateToAuth(this.hs.initial, this.hs.name)
           }
@@ -120,6 +122,7 @@ export class CampComponent implements OnInit, OnDestroy {
       peer.transferProgress = this.fs.files.map(f => ({name: f.name, value: 0, max: f.size, target: 'Stepan'}))
       this.ts.transferFiles(peer.name, this.fs.files)
         .subscribe(e => {
+          console.log('transferAllFiles.subsribed', peer.name)
           peer.transferProgress = e
         },
         err => {

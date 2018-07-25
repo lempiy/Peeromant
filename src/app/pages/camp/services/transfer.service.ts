@@ -147,6 +147,7 @@ export class TransferService {
     )
     this.pendingTransfers[to] = {}
     fls.forEach(f => this.pendingTransfers[to][f.channel] = f)
+    console.log('Request transfer', to)
     return this.hs.signalWithReplyTo(EVENT_CLIENT_REPLY_REQUEST,
       to,
       {

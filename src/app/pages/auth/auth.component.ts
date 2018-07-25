@@ -49,7 +49,7 @@ export class AuthComponent implements OnInit, OnDestroy {
             queryParams: {
               initial: 1
             }
-          } : null)
+          } : undefined)
           return
         }
         this.error = `User with name ${this.name} already connected`

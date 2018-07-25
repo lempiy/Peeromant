@@ -125,6 +125,7 @@ export class HubService {
       link.connect()
       this.fs.selected[client.name] = []
     })
+    return true
   }
 
   private onLinkOffer(e) {

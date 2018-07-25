@@ -105,13 +105,14 @@ export class Link {
             this.connection.createOffer().then(desc => {
                 console.log("Create Connection Offer")
                 this.connection.setLocalDescription(desc);
+                console.log(desc)
                 this.signaller.send({
                     action: EVENT_OFFER_CONNECTION,
                     id: this.signaller.generateID(),
                     to: this.responder,
                     payload: {
                         from: this.initiator,
-                        desc: (<Marshaller>desc).toJSON() // typings workaround
+                        desc: (<Marshaller>desc).toJSON ? (<Marshaller>desc).toJSON() : desc
                     }
                 })
             })
@@ -120,13 +121,14 @@ export class Link {
             this.connection.createAnswer().then(desc => {
                 console.log("Create Connection Answer")
                 this.connection.setLocalDescription(desc)
+                console.log((<Marshaller>desc).toJSON(), JSON.stringify(desc))
                 this.signaller.send({
                     action: EVENT_ANSWER_CONNECTION,
                     id: this.signaller.generateID(),
                     to: this.initiator,
                     payload: {
                         from: this.responder,
-                        desc: (<Marshaller>desc).toJSON() // typings workaround
+                        desc: (<Marshaller>desc).toJSON ? (<Marshaller>desc).toJSON() : desc
                     }
                 })
             })
